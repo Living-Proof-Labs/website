@@ -1,0 +1,4 @@
+# Skip until custom domain and GitHub Pages root are live (avoids 404 / SSL mismatch in CI)
+https://living-proof-labs.github.io/
+https://living-proof-labs.github.io
+https://livingprooflabs.com/
