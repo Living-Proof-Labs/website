@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    # Run on all branches so MRs and feature branches get validation and preview deploys
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
