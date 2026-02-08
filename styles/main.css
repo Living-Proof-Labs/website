@@ -6,8 +6,8 @@
   --muted: #4a5568;
   --accent: #0891b2;
   --accent-strong: #059669;
-  --border: rgba(26, 54, 93, 0.12);
-  --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+  --border: rgb(26 54 93 / 0.12);
+  --shadow: 0 24px 60px rgb(15 23 42 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,8 +18,8 @@
     --muted: #94a3b8;
     --accent: #22d3ee;
     --accent-strong: #10b981;
-    --border: rgba(226, 232, 240, 0.16);
-    --shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    --border: rgb(226 232 240 / 0.16);
+    --shadow: 0 20px 40px rgb(0 0 0 / 0.4);
   }
 }
 
@@ -31,6 +31,7 @@
 
 body {
   font-family: "Inter", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 1rem; /* 16px+ per spec */
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -80,7 +81,7 @@ a {
 .hero__visual svg {
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 0 30px rgba(8, 145, 178, 0.25));
+  filter: drop-shadow(0 0 30px rgb(8 145 178 / 0.25));
 }
 
 .eyebrow {
@@ -202,6 +203,7 @@ main {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }
+
 .footer__dot {
   margin: 0 0.5rem;
   color: var(--accent);

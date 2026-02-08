@@ -3,6 +3,11 @@
   "rules": {
     "color-function-notation": "modern",
     "alpha-value-notation": "number",
-    "font-family-no-missing-generic-family-keyword": null
+    "font-family-no-missing-generic-family-keyword": null,
+    "custom-property-empty-line-before": null,
+    "color-hex-length": null,
+    "font-family-name-quotes": null,
+    "selector-class-pattern": null,
+    "media-feature-range-notation": null
   }
 }

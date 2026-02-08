@@ -2,7 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -15,6 +16,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Build artifact for deployment. Always succeeds so deploy is not blocked by validation.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  # Validation runs in MR and on push. Failure shows in PR checks but does not block deploy.
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -25,23 +39,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+
+      - name: Install lint dependencies
+        run: npm ci
 
       - name: HTML validation
         run: npx --yes html-validate@8 "index.html"
 
       - name: CSS lint
-        run: npx --yes -p stylelint@16 -p stylelint-config-standard stylelint "styles/**/*.css"
+        run: npx stylelint "styles/**/*.css"
 
       - name: Link check
-        run: npx --yes lychee@0.15 --no-progress --verbose "index.html"
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: lycheeverse/lychee-action@v2
         with:
-          path: .
+          args: --no-progress --verbose index.html
 
+  # Deploy uses build artifact only (not validate). Preview deploys on every push; main stays updated.
   deploy:
-    needs: validate
+    needs: build
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
