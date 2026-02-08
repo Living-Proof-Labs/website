@@ -51,7 +51,9 @@ jobs:
         run: npx stylelint "styles/**/*.css"
 
       - name: Link check
-        run: npx --yes lychee@0.15 --no-progress --verbose "index.html"
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --verbose index.html
 
   # Deploy uses build artifact only (not validate). Preview deploys on every push; main stays updated.
   deploy:
