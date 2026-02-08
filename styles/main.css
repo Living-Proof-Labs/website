@@ -203,6 +203,7 @@ main {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }
+
 .footer__dot {
   margin: 0 0.5rem;
   color: var(--accent);
