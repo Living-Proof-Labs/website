@@ -31,6 +31,7 @@
 
 body {
   font-family: "Inter", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 1rem; /* 16px+ per spec */
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
