@@ -107,11 +107,21 @@ a:hover {
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--text);
   text-decoration: none;
   letter-spacing: -0.02em;
+}
+
+.logo-mark {
+  width: 1.7rem;
+  height: auto;
+  flex: none;
+  color: var(--text);
 }
 
 .nav-list {
