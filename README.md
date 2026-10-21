@@ -18,14 +18,15 @@ Open http://127.0.0.1:8765
 
 ## Deploy
 
-Push to `main`. The workflow publishes the site root to GitHub Pages and enables the Pages site on the first successful run (`actions/configure-pages` with `enablement: true`). The `CNAME` file sets the custom domain to `livingprooflabs.com`.
+Push to `main`. The workflow publishes `index.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll` to GitHub Pages. The first run creates the Pages site (`enablement: true`). The workflow token has `administration: write`, which that API call requires. If the repository secret `PAGES_ENABLE_TOKEN` is set, that token is used instead.
 
-Cloudflare DNS already points the apex and `www` at GitHub Pages (proxied A records and a `www` CNAME). SSL mode is Full, and Always Use HTTPS is on. Do not change the mail or Notion records.
+The `CNAME` file sets the custom domain to `livingprooflabs.com`.
 
-If the deploy fails because the Actions token cannot create the Pages site, either:
+Cloudflare DNS already points the apex and `www` at GitHub Pages (proxied A records and a `www` CNAME to `living-proof-labs.github.io`). SSL mode is Full, and Always Use HTTPS is on. Leave the mail and Notion records unchanged.
 
-- In the repo, open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**, then re-run the workflow. Add `livingprooflabs.com` if the `CNAME` file did not, and enable **Enforce HTTPS** once the certificate is ready.
-- Or grant the Cursor GitHub App **Pages: Read and write** and **Administration: Read and write** on `Living-Proof-Labs/website`, then ask the agent to enable Pages again. Do not paste tokens in chat.
+A Cloudflare Worker named `living-proof-labs` is also routed to `livingprooflabs.com/*` and `www.livingprooflabs.com/*`, so visitors currently get that Worker. Remove those routes when GitHub Pages should be the origin again.
+
+If the deploy still cannot create the Pages site, open [Settings → Pages](https://github.com/Living-Proof-Labs/website/settings/pages), set **Source** to **GitHub Actions**, and re-run the workflow. Enable **Enforce HTTPS** once GitHub has issued a certificate.
 
 ## Contact
 

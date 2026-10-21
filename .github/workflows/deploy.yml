@@ -9,7 +9,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # Required so configure-pages can create the Pages site on first run.
+  # Create Pages site on first run. Without this, enablement fails with
+  # "Resource not accessible by integration".
   administration: write
 
 concurrency:
@@ -30,11 +31,20 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+          # Optional repo secret. Falls back to the Actions token, which needs
+          # the administration permission above.
+          token: ${{ secrets.PAGES_ENABLE_TOKEN != '' && secrets.PAGES_ENABLE_TOKEN || github.token }}
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp index.html CNAME .nojekyll _site/
+          cp -a assets styles _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
