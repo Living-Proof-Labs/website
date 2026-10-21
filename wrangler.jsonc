@@ -1,0 +1,22 @@
+{
+  "name": "living-proof-labs",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-21",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SITE",
+      "id": "0afd76db6412480d85c4e8ccc12da043"
+    }
+  ],
+  "routes": [
+    { "pattern": "livingprooflabs.com", "custom_domain": true },
+    { "pattern": "www.livingprooflabs.com", "custom_domain": true }
+  ]
+}

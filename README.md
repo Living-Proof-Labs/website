@@ -2,11 +2,15 @@
 
 Marketing site for [Living Proof Labs](https://livingprooflabs.com): verification for robots entering human environments.
 
+**Production is live:** [https://livingprooflabs.com](https://livingprooflabs.com) (`www` 301s to the apex).
+
 ## Stack
 
 - Static HTML and CSS (no build step)
-- GitHub Pages with GitHub Actions (`.github/workflows/deploy.yml`)
-- Custom domain via `CNAME` and Cloudflare DNS
+- Cloudflare Worker `living-proof-labs` serving files from KV (`SITE`)
+- Custom domains `livingprooflabs.com` and `www.livingprooflabs.com` on the Rollerbot Creations Cloudflare account
+- Preview: [https://living-proof-labs.rollerbot-creations.workers.dev](https://living-proof-labs.rollerbot-creations.workers.dev)
+- Optional GitHub Pages backup via `.github/workflows/deploy.yml` (not enabled until Pages write access is granted)
 
 ## Local preview
 
@@ -18,47 +22,55 @@ Open http://127.0.0.1:8765
 
 ## Deploy
 
-Push to `main`. The workflow publishes the site root to GitHub Pages.
+Production is already published from this repo’s `index.html`, `styles/main.css`, and `assets/favicon.svg`.
 
-### Enable GitHub Pages (required once)
+To publish updates with Wrangler (needs a Cloudflare API token with Workers Scripts Edit and Workers KV Storage Edit):
 
-The deploy workflow cannot publish until Pages is enabled on the repo.
+```bash
+npx wrangler kv key put --binding SITE index.html --path index.html
+npx wrangler kv key put --binding SITE styles/main.css --path styles/main.css
+npx wrangler kv key put --binding SITE assets/favicon.svg --path assets/favicon.svg
+npx wrangler deploy
+```
+
+Account ID: `77ba1de72cc51cc8832b4c795e6074cf`. KV namespace: `living-proof-labs-site` (`0afd76db6412480d85c4e8ccc12da043`).
+
+GitHub Actions will run the same steps when repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set.
+
+### Enable GitHub Pages (optional backup)
+
+The GitHub Pages job cannot publish until Pages is enabled on the repo.
 
 **Option A — UI (fastest):** [Living-Proof-Labs/website → Settings → Pages](https://github.com/Living-Proof-Labs/website/settings/pages) → **Build and deployment** → **Source: GitHub Actions**. Re-run the [Deploy workflow](https://github.com/Living-Proof-Labs/website/actions/workflows/deploy.yml) on `main`.
 
-**Option B — PAT for fully automated enablement:** Add a repository secret `PAGES_ENABLE_TOKEN` (fine-grained PAT on **website** with **Contents**, **Pages**, and **Administration** read/write). The workflow passes it to `configure-pages` with `enablement: true` so the first run can turn Pages on without using the UI.
+**Option B — PAT:** Add a repository secret `PAGES_ENABLE_TOKEN` (fine-grained PAT on **website** with **Contents**, **Pages**, and **Administration** read/write). The workflow passes it to `configure-pages` with `enablement: true`.
 
-**Option C — Cursor GitHub App:** In GitHub → **Living-Proof-Labs** → **Settings** → **GitHub Apps** → Cursor → **Repository access** includes **website**, grant **Pages: Read and write** and **Administration: Read and write** on that repository so cloud agents can call the Pages API.
+**Option C — Cursor GitHub App:** In GitHub → **Living-Proof-Labs** → **Settings** → **GitHub Apps** → Cursor → grant the permissions in the table below.
 
-Then in **Settings → Pages**, set custom domain `livingprooflabs.com` (and optionally `www.livingprooflabs.com`) and enable **Enforce HTTPS** once GitHub has issued a certificate.
+If you enable Pages later, do **not** point `livingprooflabs.com` DNS back at `github.io` — Cloudflare already serves the domain from the Worker. GitHub Pages would only be a `*.github.io` backup.
 
-### First publish (empty `Living-Proof-Labs/website` repo)
+## GitHub access this agent still needs
 
-From a machine logged into GitHub:
+The Cursor GitHub App can push this branch, but the REST API reports every repo permission as **false**. That still blocks enabling GitHub Pages, setting the homepage, and managing Actions.
 
-```bash
-git clone https://github.com/Living-Proof-Labs/website.git
-cd website
-git remote add source <URL-of-this-project-repo>
-git fetch source main
-git reset --hard source/main
-git push origin main
-```
+Grant the Cursor GitHub App (org **Living-Proof-Labs** → Settings → GitHub Apps → Cursor) **read and write** on this repo for:
 
-Or add a second remote to an existing clone of this project and `git push github main`.
+| Permission | Why |
+| --- | --- |
+| **Contents** | Push branches and keep the Worker/workflow files in git |
+| **Pages** | Enable GitHub Pages (Actions source) as a backup host |
+| **Administration** | Set Pages custom domain / Enforce HTTPS / homepage |
+| **Workflows** | Update `.github/workflows/deploy.yml` |
+| **Actions** | See and rerun deploy workflows |
+| **Pull requests** | Open and update PRs from the agent |
 
-After the first push: **Settings → Pages → Build and deployment → Source: GitHub Actions**, then add custom domain `livingprooflabs.com` and enable **Enforce HTTPS**.
+Then re-run this agent (or ask it to enable Pages).
 
-Cloudflare DNS for the apex and `www` is already pointed at GitHub Pages (proxied A/CNAME records).
+Optional, for unattended Cloudflare deploys from GitHub Actions: add repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID=77ba1de72cc51cc8832b4c795e6074cf`. Do not paste tokens in chat.
 
-### Cody (Cloud Agent) push access
+A Cloudflare Pages project `living-proof-labs` also exists (`living-proof-labs.pages.dev`) but has no deployment. Direct Upload asset APIs reject the OAuth session used here; the Worker is the live origin.
 
-This agent cannot push to `github.com` until a credential is available in the environment, for example:
-
-- **Fine-grained PAT** (recommended): GitHub → Settings → Developer settings → Fine-grained tokens → resource owner **Living-Proof-Labs**, repository **website**, permissions **Contents** and **Actions** (write). Add the token as a secret in the Cursor Cloud Agent environment (e.g. `GH_TOKEN`), then ask Cody to push again.
-- **Org invite**: not required if the PAT is on your user account with access to the org repo.
-
-Do not paste tokens in chat; use environment secrets only.
+Email routing, `hub.livingprooflabs.com` → Notion, SPF/DKIM, and the Google site-verification TXT record were left in place.
 
 ## Contact
 

@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy website
 
 on:
   push:
@@ -15,7 +15,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  cloudflare:
+    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync site files to KV
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: kv key put --binding SITE index.html --path index.html
+
+      - name: Sync CSS to KV
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: kv key put --binding SITE styles/main.css --path styles/main.css
+
+      - name: Sync favicon to KV
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: kv key put --binding SITE assets/favicon.svg --path assets/favicon.svg
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+
+  github-pages:
+    if: ${{ vars.ENABLE_GITHUB_PAGES != 'false' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
