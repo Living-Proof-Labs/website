@@ -20,7 +20,17 @@ Open http://127.0.0.1:8765
 
 Push to `main`. The workflow publishes the site root to GitHub Pages.
 
-In the GitHub repo **Settings → Pages**, set source to **GitHub Actions** and configure the custom domain `livingprooflabs.com` with HTTPS enforced.
+### Enable GitHub Pages (required once)
+
+The deploy workflow cannot publish until Pages is enabled on the repo.
+
+**Option A — UI (fastest):** [Living-Proof-Labs/website → Settings → Pages](https://github.com/Living-Proof-Labs/website/settings/pages) → **Build and deployment** → **Source: GitHub Actions**. Re-run the [Deploy workflow](https://github.com/Living-Proof-Labs/website/actions/workflows/deploy.yml) on `main`.
+
+**Option B — PAT for fully automated enablement:** Add a repository secret `PAGES_ENABLE_TOKEN` (fine-grained PAT on **website** with **Contents**, **Pages**, and **Administration** read/write). The workflow passes it to `configure-pages` with `enablement: true` so the first run can turn Pages on without using the UI.
+
+**Option C — Cursor GitHub App:** In GitHub → **Living-Proof-Labs** → **Settings** → **GitHub Apps** → Cursor → **Repository access** includes **website**, grant **Pages: Read and write** and **Administration: Read and write** on that repository so cloud agents can call the Pages API.
+
+Then in **Settings → Pages**, set custom domain `livingprooflabs.com` (and optionally `www.livingprooflabs.com`) and enable **Enforce HTTPS** once GitHub has issued a certificate.
 
 ### First publish (empty `Living-Proof-Labs/website` repo)
 

@@ -26,11 +26,21 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # First deploy: set repo secret PAGES_ENABLE_TOKEN (PAT with Pages write + Administration write)
+          # or enable Pages once under Settings → Pages → Source: GitHub Actions.
+          enablement: true
+          token: ${{ secrets.PAGES_ENABLE_TOKEN != '' && secrets.PAGES_ENABLE_TOKEN || github.token }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: |
+            index.html
+            CNAME
+            .nojekyll
+            assets
+            styles
 
       - name: Deploy to GitHub Pages
         id: deployment
