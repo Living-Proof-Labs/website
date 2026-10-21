@@ -27,7 +27,7 @@ Creating the Pages site the first time needs repository administration, and a wo
 
 The `CNAME` file contains only `livingprooflabs.com`, with no scheme, path, or trailing newline. GitHub rejects anything else as “not properly formatted.”
 
-`https://livingprooflabs.com` is served by the Cloudflare Worker in `src/worker.js`, which proxies the GitHub Pages site and presents Cloudflare’s certificate. GitHub’s Enforce HTTPS checkbox stays locked until a custom domain is saved on the Pages site; `github.io` cannot turn HTTPS off. Mail and the Notion `hub` records are unchanged.
+`https://livingprooflabs.com` is proxied by Cloudflare to GitHub Pages. Cloudflare presents the certificate. The Worker in `src/worker.js` is not attached to the hostname. Mail and the Notion `hub` records are unchanged.
 
 ## Contact
 

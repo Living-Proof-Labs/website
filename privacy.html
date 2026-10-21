@@ -93,12 +93,13 @@
             <code>fonts.gstatic.com</code>). Google receives your IP address and the usual
             data in that request, which can include the address of the page you are on.
           </p>
-          <h3>DNS and email routing</h3>
+          <h3>Cloudflare and email</h3>
           <p>
-            Cloudflare provides DNS for the domain. The website address records are not
-            proxied, so an ordinary page request does not pass through Cloudflare’s web proxy.
-            Mail to the domain does. Cloudflare Email Routing receives the message and
-            forwards it to the company’s mailbox.
+            Cloudflare sits in front of the site. A visit reaches Cloudflare first. Cloudflare
+            presents the certificate, then requests the page from GitHub Pages. Cloudflare
+            receives the IP address, browser type, and URL. Mail to the domain is separate:
+            Cloudflare Email Routing receives the message and forwards it to the company’s
+            mailbox.
           </p>
           <h3>What we do not do</h3>
           <p>
@@ -144,7 +145,7 @@
           <ul>
             <li>GitHub Pages, to host and deliver the site</li>
             <li>Google, when your browser requests the fonts</li>
-            <li>Cloudflare, for DNS and to receive and forward email</li>
+            <li>Cloudflare, to deliver the site and to receive and forward email</li>
             <li>A recipient we are legally required to notify, if that duty applies</li>
           </ul>
           <p>
