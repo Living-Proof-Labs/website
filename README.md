@@ -31,8 +31,6 @@ Cloudflare DNS already points the apex and `www` at GitHub Pages (proxied A reco
 
 A Cloudflare Worker named `living-proof-labs` is also routed to `livingprooflabs.com/*` and `www.livingprooflabs.com/*`, so visitors currently get that Worker. Remove those routes when GitHub Pages should be the origin again.
 
-If the deploy still cannot create the Pages site, open [Settings → Pages](https://github.com/Living-Proof-Labs/website/settings/pages), set **Source** to **GitHub Actions**, and re-run the workflow. Enable **Enforce HTTPS** once GitHub has issued a certificate.
-
 ## Contact
 
 team@livingprooflabs.com
