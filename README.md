@@ -27,7 +27,7 @@ Creating the Pages site the first time needs repository administration, and a wo
 
 The `CNAME` file contains only `livingprooflabs.com`, with no scheme, path, or trailing newline. GitHub rejects anything else as “not properly formatted.”
 
-Cloudflare DNS for the apex is GitHub Pages’ A and AAAA addresses, and `www` is a CNAME to `living-proof-labs.github.io`. Those records are DNS-only so GitHub can see them and issue the certificate. Mail and the Notion `hub` records are unchanged. The Worker custom domains that had replaced these records are removed.
+`https://livingprooflabs.com` is served by the Cloudflare Worker in `src/worker.js`, which proxies the GitHub Pages site and presents Cloudflare’s certificate. GitHub’s Enforce HTTPS checkbox stays locked until a custom domain is saved on the Pages site; `github.io` cannot turn HTTPS off. Mail and the Notion `hub` records are unchanged.
 
 ## Contact
 
