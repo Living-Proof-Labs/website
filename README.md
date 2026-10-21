@@ -18,7 +18,12 @@ Open http://127.0.0.1:8765
 
 ## Deploy
 
-Push to `main`. The workflow publishes `index.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll` to GitHub Pages. The first run creates the Pages site (`enablement: true`). The workflow token has `administration: write`, which that API call requires. If the repository secret `PAGES_ENABLE_TOKEN` is set, that token is used instead.
+Push to `main`. The workflow publishes `index.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll` to GitHub Pages.
+
+Creating the Pages site the first time needs repository administration, and a workflow cannot grant that to `GITHUB_TOKEN` (`administration` is not a valid workflow permission). Either:
+
+- Open [Settings → Pages](https://github.com/Living-Proof-Labs/website/settings/pages), set **Source** to **GitHub Actions**, then re-run the workflow. Enable **Enforce HTTPS** once GitHub has issued a certificate.
+- Or add a repository secret `PAGES_ENABLE_TOKEN` (fine-grained PAT on this repo with **Pages** and **Administration** write). The workflow passes it to `configure-pages` with `enablement: true`.
 
 The `CNAME` file sets the custom domain to `livingprooflabs.com`.
 

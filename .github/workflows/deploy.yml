@@ -9,9 +9,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # Create Pages site on first run. Without this, enablement fails with
-  # "Resource not accessible by integration".
-  administration: write
 
 concurrency:
   group: pages
@@ -31,8 +28,10 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-          # Optional repo secret. Falls back to the Actions token, which needs
-          # the administration permission above.
+          # GitHub does not allow an Actions workflow to grant administration,
+          # which creating a Pages site requires. Set repository secret
+          # PAGES_ENABLE_TOKEN (fine-grained PAT: Pages and Administration write)
+          # or enable Pages once under Settings → Pages → Source: GitHub Actions.
           token: ${{ secrets.PAGES_ENABLE_TOKEN != '' && secrets.PAGES_ENABLE_TOKEN || github.token }}
 
       - name: Assemble site
