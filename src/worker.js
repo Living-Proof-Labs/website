@@ -21,7 +21,7 @@ export default {
     });
 
     const headers = new Headers(origin.headers);
-    headers.delete("content-security-policy");
+    // Keep GitHub Pages' Content-Security-Policy. Do not strip it without a replacement.
     headers.set("strict-transport-security", "max-age=31536000");
     return new Response(origin.body, {
       status: origin.status,

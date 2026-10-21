@@ -240,11 +240,18 @@ h1 {
 }
 
 .grade-label {
-  margin: 0 0 1rem;
+  margin: 0 0 0.35rem;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
+}
+
+.grade-disclaimer {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text);
 }
 
 .grade-list {
@@ -271,12 +278,6 @@ h1 {
   color: var(--accent);
 }
 
-.grade-foot {
-  margin: 1rem 0 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
 .section {
   padding: 4rem 0;
 }
@@ -301,6 +302,12 @@ h3 {
   color: var(--text-muted);
   max-width: 46rem;
   margin: 0 0 2rem;
+}
+
+.platform-note {
+  margin: -1rem 0 1.25rem;
+  max-width: 46rem;
+  font-weight: 600;
 }
 
 .card-grid {
