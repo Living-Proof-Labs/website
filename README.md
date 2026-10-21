@@ -25,11 +25,9 @@ Creating the Pages site the first time needs repository administration, and a wo
 - Open [Settings → Pages](https://github.com/Living-Proof-Labs/website/settings/pages), set **Source** to **GitHub Actions**, then re-run the workflow. Enable **Enforce HTTPS** once GitHub has issued a certificate.
 - Or add a repository secret `PAGES_ENABLE_TOKEN` (fine-grained PAT on this repo with **Pages** and **Administration** write). The workflow passes it to `configure-pages` with `enablement: true`.
 
-The `CNAME` file sets the custom domain to `livingprooflabs.com`.
+The `CNAME` file contains only `livingprooflabs.com`, with no scheme, path, or trailing newline. GitHub rejects anything else as “not properly formatted.”
 
-Cloudflare DNS already points the apex and `www` at GitHub Pages (proxied A records and a `www` CNAME to `living-proof-labs.github.io`). SSL mode is Full, and Always Use HTTPS is on. Leave the mail and Notion records unchanged.
-
-A Cloudflare Worker named `living-proof-labs` is also routed to `livingprooflabs.com/*` and `www.livingprooflabs.com/*`, so visitors currently get that Worker. Remove those routes when GitHub Pages should be the origin again.
+Cloudflare DNS for the apex is GitHub Pages’ A and AAAA addresses, and `www` is a CNAME to `living-proof-labs.github.io`. Those records are DNS-only so GitHub can see them and issue the certificate. Mail and the Notion `hub` records are unchanged. The Worker custom domains that had replaced these records are removed.
 
 ## Contact
 
