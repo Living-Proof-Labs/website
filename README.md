@@ -18,7 +18,7 @@ Open http://127.0.0.1:8765
 
 ## Deploy
 
-Push to `main`. The workflow publishes `index.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll` to GitHub Pages.
+Push to `main`. The workflow publishes `index.html`, `privacy.html`, `terms.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll` to GitHub Pages. The legal pages are drafts pending counsel, not a completed review.
 
 Creating the Pages site the first time needs repository administration, and a workflow cannot grant that to `GITHUB_TOKEN` (`administration` is not a valid workflow permission). Either:
 

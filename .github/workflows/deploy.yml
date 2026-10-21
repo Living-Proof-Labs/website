@@ -37,7 +37,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site
-          cp index.html CNAME .nojekyll _site/
+          cp index.html privacy.html terms.html CNAME .nojekyll _site/
           cp -a assets styles _site/
 
       - name: Upload artifact
