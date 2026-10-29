@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+version: '3'
+
+tasks:
+  check:
+    desc: Check static-site deploy inputs and internal navigation
+    cmds:
+      - python3 tools/verify_site.py
+  verify:
+    desc: Run all static-site verification
+    cmds:
+      - task: check

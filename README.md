@@ -38,12 +38,13 @@ until a maintainer deliberately sets the repository variable
 `RELEASES_ENABLED=true`; it creates GitHub Releases and `vX.Y.Z` tags only, with
 no generated changelog or version-bump commit.
 
-Pull requests are merged with merge commits, using the pull-request title as the
-merge-commit title. Use [Conventional Commit](https://www.conventionalcommits.org/)
-titles so semantic-release can infer the release: `feat:` is minor; `fix:`,
-`docs:`, `chore:`, `ci:`, and other maintenance types are patch; a title such
-as `feat!:` is major. If using a `BREAKING CHANGE:` footer instead, include it
-in the merge-commit body. Squashing is not required.
+Semantic-release examines eligible commits since the previous release. Pull
+requests are merged with merge commits, using the pull-request title as the
+merge-commit title, so use [Conventional Commit](https://www.conventionalcommits.org/)
+titles: `feat:` is minor; `fix:`, `docs:`, `chore:`, `ci:`, and other maintenance
+types are patch; a title such as `feat!:` is major. Conventional individual
+commits can also affect the calculated version. If using a `BREAKING CHANGE:`
+footer instead, include it in the merge-commit body. Squashing is not required.
 
 ## Contact
 

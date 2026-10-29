@@ -1,6 +1,8 @@
 name: Website release
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
   workflow_dispatch:
@@ -16,44 +18,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Check deploy inputs and internal navigation
-        run: |
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          from pathlib import Path
-
-          required = [
-              'index.html', 'privacy.html', 'terms.html', 'CNAME', '.nojekyll',
-              'assets', 'styles',
-          ]
-          missing = [path for path in required if not Path(path).exists()]
-          if missing:
-              raise SystemExit(f'Missing deploy inputs: {", ".join(missing)}')
-
-          class Links(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.ids = set()
-                  self.fragments = []
-
-              def handle_starttag(self, tag, attrs):
-                  attributes = dict(attrs)
-                  if 'id' in attributes:
-                      self.ids.add(attributes['id'])
-                  if tag == 'a' and attributes.get('href', '').startswith('#'):
-                      self.fragments.append(attributes['href'][1:])
-
-          page = Links()
-          page.feed(Path('index.html').read_text())
-          unresolved = sorted(set(page.fragments) - page.ids)
-          if unresolved:
-              raise SystemExit(f'Unresolved fragment links: {", ".join(unresolved)}')
-          PY
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - run: task verify
 
   release:
     needs: verify
     # Enable publication deliberately with the repository variable RELEASES_ENABLED=true.
-    if: github.ref == 'refs/heads/main' && vars.RELEASES_ENABLED == 'true'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.RELEASES_ENABLED == 'true'
     permissions:
       contents: write
     # v6.0.2 resolves to 2dab53acd2b146af819520dec1bb34cc6b87c94c.
