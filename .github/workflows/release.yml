@@ -25,8 +25,8 @@ jobs:
 
   release:
     needs: verify
-    # Enable publication deliberately with the repository variable RELEASES_ENABLED=true.
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.RELEASES_ENABLED == 'true'
+    # Releases are trusted-main work only; pull-request verification remains read-only.
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     permissions:
       contents: write
     # v6.0.2 resolves to 2dab53acd2b146af819520dec1bb34cc6b87c94c.
