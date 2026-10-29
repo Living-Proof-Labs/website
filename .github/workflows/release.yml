@@ -1,0 +1,33 @@
+name: Website release
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify static site inputs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - run: task verify
+
+  release:
+    needs: verify
+    # Enable publication deliberately with the repository variable RELEASES_ENABLED=true.
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.RELEASES_ENABLED == 'true'
+    permissions:
+      contents: write
+    # v6.0.2 resolves to 2dab53acd2b146af819520dec1bb34cc6b87c94c.
+    uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v6.0.2
