@@ -51,6 +51,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles/main.css" />
+    <script src="assets/nav.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -67,13 +68,15 @@
           </svg>
           Living Proof Labs
         </a>
-        <nav aria-label="Primary">
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" hidden>Menu</button>
+        <nav id="primary-nav" class="primary-nav" aria-label="Primary">
           <ul class="nav-list">
             <li><a href="#proof">What we do</a></li>
-            <li><a href="#how">How it will work</a></li>
-            <li><a href="https://docs.livingprooflabs.com/">Docs</a></li>
+            <li><a href="#docs">Available today</a></li>
+            <li><a href="#how">How it works</a></li>
             <li><a href="#founder">Who we are</a></li>
             <li><a href="#contact">Contact</a></li>
+            <li><a class="nav-external" href="https://docs.livingprooflabs.com/">Docs<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (external site)</span></a></li>
           </ul>
         </nav>
       </div>
@@ -181,7 +184,7 @@
       <section id="docs" class="section docs-section" aria-labelledby="docs-heading">
         <div class="container narrow">
           <p class="eyebrow">Open-source foundations</p>
-          <h2 id="docs-heading">See what is available today</h2>
+          <h2 id="docs-heading">Available today</h2>
           <p class="section-intro">
             Our public work includes reusable robot capability specifications and native, headless
             simulation tools for MuJoCo and Gazebo. They are working foundations, not a claim of
@@ -197,7 +200,7 @@
 
       <section id="how" class="section muted">
         <div class="container">
-          <h2>How the platform will work</h2>
+          <h2>How it works</h2>
           <p class="section-intro">
             The platform will connect those foundations into a repeatable evidence loop.
           </p>
@@ -244,7 +247,7 @@
       <section id="founder" class="section">
         <div class="container founder-grid">
           <div>
-            <h2>Who is behind this</h2>
+            <h2>Who we are</h2>
             <p class="section-intro">
               Living Proof Labs is led by
               <a href="https://www.linkedin.com/in/rolleraaron/" rel="me noopener noreferrer">Aaron Roller</a>,

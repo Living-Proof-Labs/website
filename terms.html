@@ -20,6 +20,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles/main.css" />
+    <script src="assets/nav.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -36,12 +37,15 @@
           </svg>
           Living Proof Labs
         </a>
-        <nav aria-label="Primary">
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" hidden>Menu</button>
+        <nav id="primary-nav" class="primary-nav" aria-label="Primary">
           <ul class="nav-list">
             <li><a href="/#proof">What we do</a></li>
+            <li><a href="/#docs">Available today</a></li>
             <li><a href="/#how">How it works</a></li>
             <li><a href="/#founder">Who we are</a></li>
             <li><a href="/#contact">Contact</a></li>
+            <li><a class="nav-external" href="https://docs.livingprooflabs.com/">Docs<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (external site)</span></a></li>
           </ul>
         </nav>
       </div>
