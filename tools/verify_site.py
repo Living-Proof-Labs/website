@@ -26,6 +26,7 @@ class Links(HTMLParser):
 def main() -> None:
     required = [
         "index.html",
+        "404.html",
         "privacy.html",
         "terms.html",
         "CNAME",
