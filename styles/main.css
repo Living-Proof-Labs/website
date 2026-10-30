@@ -600,3 +600,16 @@ h3 {
     align-items: flex-start;
   }
 }
+
+.contact-block {
+  max-width: 34rem;
+}
+
+.email-address {
+  user-select: all;
+  word-break: break-all;
+}
+
+.contact-actions {
+  margin: 1rem 0 0;
+}
