@@ -8,8 +8,10 @@
   --bg-muted: #eef2f7;
   --surface: #ffffff;
   --border: #cbd5e1;
-  --accent: #0d9488;
-  --accent-hover: #0f766e;
+  --accent: #0f766e;
+  --accent-hover: #115e59;
+  --accent-decor: #0d9488;
+  --on-accent: #ffffff;
   --shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
   --header-bg: rgba(248, 250, 252, 0.85);
   --hero-gradient: radial-gradient(ellipse 80% 60% at 70% 0%, rgba(13, 148, 136, 0.12), transparent 60%);
@@ -25,6 +27,8 @@
     --border: #334155;
     --accent: #2dd4bf;
     --accent-hover: #5eead4;
+    --accent-decor: #2dd4bf;
+    --on-accent: #042f2e;
     --shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
     --header-bg: rgba(11, 17, 32, 0.9);
     --hero-gradient: radial-gradient(ellipse 80% 60% at 70% 0%, rgba(45, 212, 191, 0.15), transparent 60%);
@@ -86,7 +90,7 @@ a:focus-visible {
   top: 0;
   padding: 0.75rem 1rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   z-index: 100;
 }
 
@@ -211,20 +215,19 @@ h1 {
   border: 1px solid transparent;
 }
 
+.button.primary,
+.button.primary:hover,
+.button.primary:focus-visible {
+  color: var(--on-accent);
+}
+
 .button.primary {
   background: var(--accent);
-  color: #042f2e;
 }
 
-@media (prefers-color-scheme: light) {
-  .button.primary {
-    color: #fff;
-  }
-}
-
-.button.primary:hover {
-  filter: brightness(1.05);
-  color: inherit;
+.button.primary:hover,
+.button.primary:focus-visible {
+  background: var(--accent-hover);
 }
 
 .button.ghost {
@@ -348,7 +351,7 @@ h3 {
 .callout {
   margin-top: 2rem;
   padding: 1.25rem 1.5rem;
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid var(--accent-decor);
   background: var(--surface);
   border-radius: 0 0.5rem 0.5rem 0;
 }
@@ -420,15 +423,9 @@ h3 {
   place-items: center;
   border-radius: 50%;
   background: var(--accent);
-  color: #042f2e;
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 0.9rem;
-}
-
-@media (prefers-color-scheme: light) {
-  .step-num {
-    color: #fff;
-  }
 }
 
 .steps p {
@@ -475,7 +472,7 @@ h3 {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-decor);
 }
 
 .timeline strong {
