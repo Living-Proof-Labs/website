@@ -20,6 +20,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles/main.css" />
+    <script src="assets/nav.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -36,12 +37,15 @@
           </svg>
           Living Proof Labs
         </a>
-        <nav aria-label="Primary">
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" hidden>Menu</button>
+        <nav id="primary-nav" class="primary-nav" aria-label="Primary">
           <ul class="nav-list">
             <li><a href="/#proof">What we do</a></li>
+            <li><a href="/#docs">Available today</a></li>
             <li><a href="/#how">How it works</a></li>
             <li><a href="/#founder">Who we are</a></li>
             <li><a href="/#contact">Contact</a></li>
+            <li><a class="nav-external" href="https://docs.livingprooflabs.com/">Docs<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (external site)</span></a></li>
           </ul>
         </nav>
       </div>
@@ -104,8 +108,8 @@
           <h3>What we do not do</h3>
           <p>
             The pages we publish do not set cookies and do not store information in your
-            browser. A small script writes the current year into the footer. It does not
-            identify you.
+            browser.
+            The pages run no tracking or analytics scripts.
           </p>
         </section>
 
@@ -216,7 +220,7 @@
 
     <footer class="site-footer">
       <div class="container footer-inner">
-        <p>© <span id="year"></span> Living Proof Labs, LLC · Sausalito, CA</p>
+        <p>© 2026 Living Proof Labs, LLC · Sausalito, CA</p>
         <p class="footer-links">
           <a href="/privacy.html" aria-current="page">Privacy</a>
           <a href="/terms.html">Terms</a>
@@ -224,8 +228,5 @@
         <p class="footer-note">Simulation-first verification for robots entering human spaces.</p>
       </div>
     </footer>
-    <script>
-      document.getElementById("year").textContent = new Date().getFullYear();
-    </script>
   </body>
 </html>
