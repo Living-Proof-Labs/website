@@ -6,6 +6,7 @@ tasks:
     desc: Check static-site deploy inputs and internal navigation
     cmds:
       - python3 tools/verify_site.py
+      - python3 tools/check_css.py
   verify:
     desc: Run all static-site verification
     cmds:
