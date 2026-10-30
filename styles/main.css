@@ -601,6 +601,88 @@ h3 {
   }
 }
 
+:root {
+  --badge-now-text: #115e59;
+  --badge-now-bg: #ccfbf1;
+  --badge-building-text: #92400e;
+  --badge-building-bg: #fef3c7;
+  --badge-planned-text: #334155;
+  --badge-planned-bg: #e2e8f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --badge-now-text: #5eead4;
+    --badge-now-bg: #0f2e2b;
+    --badge-building-text: #fcd34d;
+    --badge-building-bg: #33260a;
+    --badge-planned-text: #cbd5e1;
+    --badge-planned-bg: #1e293b;
+  }
+}
+
+.badge {
+  display: inline-block;
+  margin: 0 0 0.6rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.6;
+}
+
+.badge-now {
+  color: var(--badge-now-text);
+  background: var(--badge-now-bg);
+}
+
+.badge-building {
+  color: var(--badge-building-text);
+  background: var(--badge-building-bg);
+}
+
+.badge-planned {
+  color: var(--badge-planned-text);
+  background: var(--badge-planned-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.status-columns {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .status-columns {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.status-column {
+  display: grid;
+  gap: 1rem;
+}
+
+.status-heading {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.card h4 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.steps li .badge {
+  display: table;
+}
+
 .founder-portrait {
   width: 6rem;
   height: 6rem;
