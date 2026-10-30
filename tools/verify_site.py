@@ -31,6 +31,8 @@ def main() -> None:
         "CNAME",
         ".nojekyll",
         "assets",
+        "assets/aaron-roller.jpg",
+        "assets/aaron-roller.webp",
         "styles",
     ]
     missing = [path for path in required if not Path(path).exists()]
