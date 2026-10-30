@@ -609,6 +609,8 @@ h3 {
   --badge-now-bg: #ccfbf1;
   --badge-building-text: #92400e;
   --badge-building-bg: #fef3c7;
+  --badge-planned-text: #334155;
+  --badge-planned-bg: #e2e8f0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -617,6 +619,8 @@ h3 {
     --badge-now-bg: #0f2e2b;
     --badge-building-text: #fcd34d;
     --badge-building-bg: #33260a;
+    --badge-planned-text: #cbd5e1;
+    --badge-planned-bg: #1e293b;
   }
 }
 
@@ -640,6 +644,12 @@ h3 {
 .badge-building {
   color: var(--badge-building-text);
   background: var(--badge-building-bg);
+}
+
+.badge-planned {
+  color: var(--badge-planned-text);
+  background: var(--badge-planned-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 
 .status-columns {
