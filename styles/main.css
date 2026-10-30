@@ -603,3 +603,27 @@ h3 {
     align-items: flex-start;
   }
 }
+
+.founder-portrait {
+  width: 6rem;
+  height: 6rem;
+  margin: 0 0 1.25rem;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.founder-portrait--placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--bg-muted);
+  border: 2px dashed var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-serif);
+  font-size: 2rem;
+}
+
+.case-studies {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
