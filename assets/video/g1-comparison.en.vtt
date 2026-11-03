@@ -13,9 +13,12 @@ Seed 1: same start, same command. Both controllers pass.
 00:24.500 --> 00:33.500
 All 20 seeds, side by side. Teal = PASS. Amber = FAIL (side-wall contact or drifted beyond the lateral limit).
 
-00:33.500 --> 00:43.500
-The tally: 12/20 and 13/20 against a bar of 18/20, with 95% intervals.
-Neither clears the bar. No winner yet, and now we know where to work.
+00:33.500 --> 00:38.500
+The tally (snapshot recorded 1 Nov 2026): passes count up against a bar of 18/20.
+
+00:38.500 --> 00:43.500
+Snapshot recorded 1 Nov 2026: Unitree stock 1.1.0 12/20 FAIL (95% interval 39–78%), Playground 1.0.0 13/20 FAIL (95% interval 43–82%).
+Neither clears the bar. Latest results: docs.livingprooflabs.com/livingproof-verification/
 
 00:43.500 --> 00:47.000
 Chapter 2: Will this work for my robot?
@@ -28,4 +31,4 @@ Humanoids. Quadrupeds. Your robot next.
 
 01:00.000 --> 01:06.040
 "Bring reality to the front so we can make robots better." Aaron Roller, Living Proof Labs.
-Spec v1.5.0 · hallway-open 0.1.0 · MuJoCo 3.17.0 · 20 seeds per controller · Wilson 95% intervals
+Spec v1.5.0 at time of recording · hallway-open 0.1.0 · MuJoCo 3.17.0 · 20 seeds per controller · Wilson 95% intervals
