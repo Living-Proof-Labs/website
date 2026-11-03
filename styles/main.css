@@ -165,9 +165,13 @@ a:focus-visible {
   align-items: center;
 }
 
-@media (min-width: 900px) {
+.hero-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
   .hero-grid {
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: minmax(min(100%, 28rem), 1fr) minmax(0, 1.2fr);
   }
 }
 
@@ -240,8 +244,15 @@ h1 {
   color: var(--accent);
 }
 
+.hero-visual {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .hero-video {
   margin: 0;
+  min-width: 0;
+  max-width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1rem;
@@ -252,7 +263,11 @@ h1 {
 .hero-video video {
   display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
   border-radius: 0.6rem;
   background: #0b1220;
 }
@@ -818,4 +833,11 @@ h3 {
 
 .legal-main .not-found-links li + li {
   margin-top: 0;
+}
+
+/* Grid children must be allowed to shrink below their min-content width. */
+.card-grid > *,
+.founder-grid > *,
+.status-columns > * {
+  min-width: 0;
 }
