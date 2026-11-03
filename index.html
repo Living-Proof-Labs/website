@@ -100,15 +100,26 @@
             </div>
           </div>
           <div class="hero-visual">
-            <div class="grade-card">
-              <p class="grade-label">Capability snapshot</p>
-              <p class="grade-disclaimer">Illustrative example—not measured results.</p>
-              <ul class="grade-list">
-                <li><span>Navigate crowded aisle</span><strong>B+</strong></li>
-                <li><span>Recover from trip hazard</span><strong>A−</strong></li>
-                <li><span>Hand off object safely</span><strong>C+</strong></li>
-              </ul>
-            </div>
+            <figure class="hero-video">
+              <video
+                controls
+                muted
+                playsinline
+                preload="metadata"
+                poster="assets/video/g1-comparison-poster.jpg"
+                width="1280"
+                height="720"
+                aria-describedby="hero-video-caption"
+              >
+                <source src="assets/video/g1-comparison.mp4" type="video/mp4" />
+                <track kind="captions" src="assets/video/g1-comparison.en.vtt" srclang="en" label="English" />
+                <a href="assets/video/g1-comparison.mp4">Download the comparison video (MP4)</a>
+              </video>
+              <figcaption id="hero-video-caption">
+                Same hallway, two controllers, 20 runs each on a Unitree G1 in simulation. Measured
+                against an 18 of 20 bar: neither clears it yet.
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
