@@ -354,6 +354,51 @@ h3 {
   margin: 0;
 }
 
+/* Quickstart block: same shrinkable two-column grid as the hero; stacks on narrow screens. */
+.quickstart-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.quickstart-block h3 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 1.5rem;
+  color: var(--text);
+}
+
+.quickstart-block p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.quickstart-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .quickstart-block {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quickstart-links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+  }
+}
+
 .text-link {
   font-weight: 600;
 }
