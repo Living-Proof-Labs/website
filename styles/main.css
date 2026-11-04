@@ -898,3 +898,13 @@ h3 {
   font-size: 0.875rem;
   margin: 0 0 0.5rem;
 }
+
+.where-we-fit {
+  max-width: 48rem;
+  margin: 1.75rem 0 0;
+  color: var(--text-muted);
+}
+
+.where-we-fit strong {
+  color: var(--text);
+}
