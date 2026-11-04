@@ -128,10 +128,15 @@ a:focus-visible {
 }
 
 .logo-mark {
-  width: 1.7rem;
+  width: 1.8rem;
   height: auto;
   flex: none;
   color: var(--text);
+}
+
+/* Teal check = verification (#0f766e light, #2dd4bf dark via --accent). */
+.logo-mark .logo-check {
+  stroke: var(--accent);
 }
 
 .nav-list {
