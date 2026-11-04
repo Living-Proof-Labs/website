@@ -34,6 +34,14 @@ def main() -> None:
         "assets",
         "assets/aaron-roller.jpg",
         "assets/aaron-roller.webp",
+        "favicon.ico",
+        "site.webmanifest",
+        "assets/favicon.svg",
+        "assets/favicon-32.png",
+        "assets/apple-touch-icon.png",
+        "assets/icon-192.png",
+        "assets/icon-512.png",
+        "assets/og.png",
         "styles",
     ]
     missing = [path for path in required if not Path(path).exists()]
