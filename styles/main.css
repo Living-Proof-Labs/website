@@ -3,6 +3,7 @@
   --font-sans: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
   --text: #0f172a;
+  --logo-head: #111111;
   --text-muted: #475569;
   --bg: #f8fafc;
   --bg-muted: #eef2f7;
@@ -20,6 +21,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #e2e8f0;
+    --logo-head: #e6fffa;
     --text-muted: #94a3b8;
     --bg: #0b1120;
     --bg-muted: #111827;
@@ -131,7 +133,7 @@ a:focus-visible {
   width: 1.8rem;
   height: auto;
   flex: none;
-  color: var(--text);
+  color: var(--logo-head);
 }
 
 /* Teal check = verification (#0f766e light, #2dd4bf dark via --accent). */
