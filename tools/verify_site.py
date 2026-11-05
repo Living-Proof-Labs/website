@@ -3,6 +3,8 @@
 """Check the static-site inputs that GitHub Pages deploys."""
 
 from html.parser import HTMLParser
+import os
+import sys
 from pathlib import Path
 
 
@@ -24,6 +26,9 @@ class Links(HTMLParser):
 
 
 def main() -> None:
+    # Optional root (e.g. _site) so CI checks the assembled artifact.
+    if len(sys.argv) > 1:
+        os.chdir(sys.argv[1])
     required = [
         "index.html",
         "404.html",
