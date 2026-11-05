@@ -198,11 +198,22 @@ h1 {
   letter-spacing: -0.02em;
 }
 
+.hero h1 {
+  font-size: clamp(2.05rem, 3.7vw, 2.85rem);
+  line-height: 1.14;
+  max-width: 16em;
+}
+
 .lead {
   font-size: 1.15rem;
   color: var(--text-muted);
-  margin: 0 0 1.75rem;
-  max-width: 38rem;
+  margin: 0 0 0.85rem;
+  max-width: 40rem;
+}
+
+.engage-line {
+  margin: 0 0 1.5rem;
+  max-width: 40rem;
 }
 
 .hero-actions {
@@ -313,6 +324,10 @@ h3 {
 @media (min-width: 768px) {
   .card-grid.three {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .card-grid.two {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
