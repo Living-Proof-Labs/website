@@ -3,22 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Living Proof Labs | Verification for robots in the real world</title>
+    <title>Living Proof Labs | Verification consulting for humanoid software</title>
     <meta
       name="description"
-      content="Living Proof Labs builds Living Proof Verification™, open-source verification that runs robot software through repeatable missions and publishes honest, measured reports."
+      content="Aaron-led verification consulting for humanoid software. Clear behaviors, repeatable tests, and a report you can read—including the failures."
     />
     <meta
       name="keywords"
-      content="robot verification, humanoid robotics, simulation testing, autonomous systems, Living Proof Labs, Living Proof Verification™"
+      content="verification consulting, humanoid software, robot verification, simulation testing, Living Proof Labs, Aaron Roller"
     />
     <meta name="author" content="Living Proof Labs" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://livingprooflabs.com/" />
-    <meta property="og:title" content="Living Proof Labs" />
+    <meta property="og:title" content="Living Proof Labs | Verification consulting" />
     <meta
       property="og:description"
-      content="Real controllers. Measured honestly. Living Proof Verification™ is open-source verification for robots, available now."
+      content="Aaron-led verification consulting. Clear behaviors, repeatable tests, and a report you can read—including the failures."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://livingprooflabs.com/" />
@@ -31,10 +31,10 @@
       content="Living Proof Labs. Proof before the robot meets the world."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Living Proof Labs" />
+    <meta name="twitter:title" content="Living Proof Labs | Verification consulting" />
     <meta
       name="twitter:description"
-      content="Real controllers. Measured honestly. Living Proof Verification™ is open-source verification for robots, available now."
+      content="Aaron-led verification consulting. Clear behaviors, repeatable tests, and a report you can read—including the failures."
     />
     <meta name="twitter:image" content="https://livingprooflabs.com/assets/og.png" />
     <meta
@@ -77,10 +77,10 @@
         <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" hidden>Menu</button>
         <nav id="primary-nav" class="primary-nav" aria-label="Primary">
           <ul class="nav-list">
-            <li><a href="#proof">What we do</a></li>
-            <li><a href="#docs">Available today</a></li>
-            <li><a href="#how">How it works</a></li>
-            <li><a href="#founder">Who we are</a></li>
+            <li><a href="#engagement">Engagement</a></li>
+            <li><a href="#how">How it runs</a></li>
+            <li><a href="#report">Report</a></li>
+            <li><a href="#scope">Scope</a></li>
             <li><a href="#contact">Contact</a></li>
             <li><a class="nav-external" href="https://docs.livingprooflabs.com/">Docs<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (external site)</span></a></li>
           </ul>
@@ -92,17 +92,31 @@
       <section class="hero">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow">Verification · Simulation · Real-world readiness</p>
-            <h1>Proof before the robot meets the world.</h1>
+            <p class="eyebrow">Verification consulting · Humanoid software</p>
+            <h1>Know what works before you ship.</h1>
             <p class="lead">
-              Living Proof Labs helps robotics teams prepare for human environments with
-              evidence—not hope. Living Proof Verification™, our open-source product, runs a
-              robot's software through repeatable missions in simulation and publishes a report a
-              person can read: how many runs passed, against what bar, and why the others failed.
+              Aaron-led verification consulting. Clear behaviors, repeatable tests, a report you can read—including the failures.
             </p>
             <div class="hero-actions">
               <a class="button primary" href="#contact">Start a conversation</a>
-              <a class="button ghost" href="https://docs.livingprooflabs.com/">Explore the docs</a>
+              <a class="button ghost" href="https://docs.livingprooflabs.com/livingproof-verification/">See a live report</a>
+            </div>
+            <div class="accountability">
+              <picture>
+                <source srcset="assets/aaron-roller.webp" type="image/webp" />
+                <img
+                  src="assets/aaron-roller.jpg"
+                  alt="Aaron Roller"
+                  width="192"
+                  height="192"
+                />
+              </picture>
+              <p>
+                Led by
+                <a href="https://www.linkedin.com/in/rolleraaron/" rel="me noopener noreferrer">Aaron Roller</a>—previously
+                Head of Software Infrastructure and Reliability at ANYbotics; earlier Airtonomy, AutoModality, and Cruise.
+                Supported by a team of specialized agents and open tools. Aaron reviews every engagement report.
+              </p>
             </div>
           </div>
           <div class="hero-visual">
@@ -122,270 +136,141 @@
                 <a href="assets/video/g1-comparison.mp4">Download the comparison video (MP4)</a>
               </video>
               <figcaption id="hero-video-caption">
-                Snapshot recorded 1 Nov 2026, spec v1.5.0. See the
-                <a class="text-link" href="https://docs.livingprooflabs.com/livingproof-verification/">live report</a>
-                for current results.
+                <span>Snapshot recorded 1 Nov 2026, spec v1.5.0. The clip includes failed runs. Neither controller clears the bar in this recording.</span>
+                <a class="text-link" href="https://docs.livingprooflabs.com/livingproof-verification/">See the live report</a>
               </figcaption>
             </figure>
           </div>
         </div>
       </section>
 
-      <section id="proof" class="section">
+      <section id="engagement" class="section" aria-labelledby="engagement-heading">
         <div class="container">
-          <h2>What we do</h2>
+          <p class="eyebrow">Example engagement</p>
+          <p class="field-label">Release question</p>
+          <h2 id="engagement-heading">Does this controller still walk a hallway under our stated conditions after today’s software change?</h2>
+          <p class="field-label">Problem</p>
           <p class="section-intro">
-            We help robotics teams plan verification before they bet on a site. It is aimed at
-            humanoids first, and at any robot stack after that.
+            A humanoid software team needs evidence for a specific behavior before a release or pilot—not a demo reel.
           </p>
-          <div class="status-columns">
-            <div class="status-column">
-              <h3 class="status-heading">Today</h3>
-              <article class="card">
-                <span class="badge badge-now">Available now</span>
-                <h4>Consulting and design partnerships</h4>
-                <p>
-                  Define the user stories a deployment depends on, agree what evidence would count,
-                  and plan verification with your team.
-                </p>
-              </article>
-              <article class="card">
-                <span class="badge badge-now">Available now</span>
-                <h4>Open-source foundations</h4>
-                <p>
-                  Robot capability specifications and native, headless simulation tools for MuJoCo
-                  and Gazebo. <a href="#docs">See the open-source work</a>.
-                </p>
-              </article>
-              <article class="card">
-                <span class="badge badge-now">Available now</span>
-                <h4>Simulation worlds that grade</h4>
-                <p>
-                  A software build runs in a simulation matched to those stories. Each run is graded,
-                  so a team can see where it passes, where it fails, and what to fix next.
-                </p>
-              </article>
-            </div>
-            <div class="status-column">
-              <h3 class="status-heading">Building</h3>
-              <article class="card">
-                <span class="badge badge-building">Building</span>
-                <h4>User stories as the contract</h4>
-                <p>
-                  A capability will be a user story—a clear, testable behavior customers and operators
-                  care about. No vague “AI magic.” Concrete expectations.
-                </p>
-              </article>
-              <article class="card">
-                <span class="badge badge-building">Building</span>
-                <h4>Capability history, not one-off demos</h4>
-                <p>
-                  Grades will accumulate in a library: the same robot across software versions, the
-                  same software on different hardware, benchmarks against peers. The result is a grade
-                  for the whole system, and a paper trail partners can trust.
-                </p>
-              </article>
-            </div>
+          <div class="card-grid three">
+            <article class="card">
+              <h3>You provide</h3>
+              <ul>
+                <li>Controller or policy</li>
+                <li>Robot model or thin adapter</li>
+                <li>Deployment stories that matter</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>We do</h3>
+              <ul>
+                <li>Agree behaviors and the success bar</li>
+                <li>Run repeatable simulation missions</li>
+                <li>Preserve evidence and compare it to a versioned baseline</li>
+                <li>Recommend fixes, then re-run to show what changed</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>You take away</h3>
+              <ul>
+                <li>Reusable tests</li>
+                <li>Preserved evidence</li>
+                <li>A readable report</li>
+                <li>A comparison to the prior version</li>
+              </ul>
+            </article>
           </div>
-          <div class="callout">
+          <div class="engagement-close">
             <p>
-              <strong>Available now:</strong> Living Proof Verification™, open-source, with measured
-              evidence you can inspect. <strong>Next:</strong> we expand what Verification can do
-              with a fleet of robots, physical robots in the Labs, and Living Proof Diagnosis™,
-              alongside partner companies who share the vision. It's early days, and we're looking
-              for robot companies who want this kind of system: a companion tool for improving
-              robot capabilities, one iteration at a time.
+              <span class="field-label">Rough duration</span>
+              A first engagement typically lands in a few weeks from kickoff to first report—scoped in the opening conversation.
             </p>
             <p>
-              <strong>We improve teams, not weights.</strong> The first product is meant to coach
-              the developers building the robot—tight feedback loops, reproducible runs, and honest
-              reports. Deep model training is not the starting point;
-              engineering discipline is.
+              <span class="field-label">How you start</span>
+              <a href="mailto:team@livingprooflabs.com">team@<wbr>livingprooflabs.com</a>
             </p>
           </div>
         </div>
       </section>
 
-      <section id="docs" class="section docs-section" aria-labelledby="docs-heading">
-        <div class="container narrow">
-          <p class="eyebrow">Living Proof Verification™</p>
-          <h2 id="docs-heading">Available today</h2>
-          <p class="section-intro">
-            Living Proof Verification™ is open source and made to help anyone who finds it useful.
-            It runs Unitree robots through simulated missions in MuJoCo and publishes graded reports
-            with the evidence behind every run: the passes, the failures and the bar they are
-            measured against.
-          </p>
-          <p><span class="badge badge-now">Available now</span></p>
-          <p class="docs-links">
-            <a class="text-link" href="https://docs.livingprooflabs.com/livingproof-verification/">See the latest measured reports</a>
-            <a class="text-link" href="https://docs.livingprooflabs.com/">Read the documentation</a>
-            <a class="text-link" href="https://github.com/Living-Proof-Labs">Browse the GitHub organization</a>
-          </p>
-          <div class="quickstart-block" role="region" aria-labelledby="quickstart-heading">
-            <div class="quickstart-copy">
-              <h3 id="quickstart-heading">Quickstart</h3>
-              <p>
-                Verify the Unitree G1 stock controller in simulation: 20 seeded trials in a MuJoCo
-                hallway, graded against a pass bar of 18&nbsp;of&nbsp;20. Open-source, on your own machine.
-              </p>
-            </div>
-            <p class="quickstart-links">
-              <a class="text-link" href="https://docs.livingprooflabs.com/quickstart.html">Full Quickstart</a>
-              <a class="text-link" href="https://docs.livingprooflabs.com/livingproof-verification/">Live report</a>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section id="how" class="section muted">
+      <section id="how" class="section muted" aria-labelledby="how-heading">
         <div class="container">
-          <h2>How it works</h2>
-          <p class="section-intro">
-            Living Proof Verification™ connects those foundations into a repeatable evidence loop.
-          </p>
-          <ol class="steps">
+          <h2 id="how-heading">How it runs</h2>
+          <ol class="steps compact">
             <li>
               <span class="step-num">1</span>
               <div>
-                <span class="badge badge-now">Available now</span>
-                <h3>Define stories</h3>
-                <p>Align on user stories that map to real deployments—retail, inspection, logistics, or your vertical.</p>
+                <h3>Behaviors and bar</h3>
+                <p>Name the behaviors that matter and the bar they have to clear.</p>
               </div>
             </li>
             <li>
               <span class="step-num">2</span>
               <div>
-                <span class="badge badge-now">Available now</span>
-                <h3>Run &amp; grade in simulation</h3>
-                <p>Run a robot's software through the same mission many times in simulation; each run is graded against an agreed bar, with the evidence kept.</p>
+                <h3>Repeatable tests</h3>
+                <p>Run the same simulation missions and keep the evidence.</p>
               </div>
             </li>
             <li>
               <span class="step-num">3</span>
               <div>
-                <span class="badge badge-building">Next</span>
-                <h3>Track &amp; improve</h3>
-                <p>Compare runs over time, prioritize fixes, and show partners measurable progress. Living Proof Diagnosis™ brings agents and humans together to review the evidence and code and find a path to a fix.</p>
+                <h3>Report and next fixes</h3>
+                <p>A report you can read, failures included, and what to fix next.</p>
               </div>
             </li>
             <li>
               <span class="step-num">4</span>
               <div>
-                <span class="badge badge-planned">Next</span>
-                <h3>Graduate to the Labs</h3>
-                <p>
-                  A fleet of physical robots running the same missions in the Labs, real places with
-                  real human chaos, alongside partner companies who share the vision.
-                </p>
+                <h3>Re-test the next build</h3>
+                <p>Run the next build against the same bar and the prior version.</p>
               </div>
             </li>
           </ol>
-          <div class="bring-provide-get" role="region" aria-labelledby="bpg-heading">
-            <p id="bpg-heading" class="bpg-lead">You build the robot software. We provide the verification workflow. You get evidence of what it can do, version after version.</p>
-            <div class="card-grid three">
-              <div class="card">
-                <h3>You bring</h3>
-                <ul>
-                  <li>The software that runs your robot, meaning its controller or policy.</li>
-                  <li>Your robot model and a thin adapter.</li>
-                  <li>Your CI compute. Runs on standard CI runners, no GPU needed.</li>
-                </ul>
-              </div>
-              <div class="card">
-                <h3>We provide</h3>
-                <p class="bpg-note">Living Proof Verification™, open-source</p>
-                <ul>
-                  <li>Capability specs written as user stories.</li>
-                  <li>Versioned simulation worlds and a runner.</li>
-                  <li>The verifier, the reporter and a reusable CI workflow.</li>
-                </ul>
-              </div>
-              <div class="card">
-                <h3>You get</h3>
-                <ul>
-                  <li>A pass or fail for each capability, with the evidence and the grade behind it.</li>
-                  <li>The same check on every software version, so you can see what changed.</li>
-                  <li>A report you can share with partners.</li>
-                </ul>
-              </div>
-            </div>
-            <p class="where-we-fit">
-              <strong>Where we fit:</strong> Living Proof Verification™ is for anyone building robot
-              software who wants proof it's getting better: a developer comparing two controllers, or
-              a quality team checking a release. It doesn't train models; it verifies the controllers
-              you build. Picture one report that shows which version does better, whether it meets
-              the bar, and why.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section id="founder" class="section">
-        <div class="container founder-grid">
-          <div>
-            <h2>Who we are</h2>
-            <p class="section-intro">
-              <a href="https://www.linkedin.com/in/rolleraaron/" rel="me noopener noreferrer">Aaron Roller</a>:
-              Human leading Agents improving Robots. Aaron founded Living Proof Labs and works alongside
-              specialized agents for operations, engineering, and design, improving robots by proving
-              their capabilities. Previously Head of Software Infrastructure &amp; Reliability at
-              ANYbotics, still working with the team. Earlier: Airtonomy, AutoModality, Cruise.
-            </p>
-            <picture class="founder-portrait">
-              <source srcset="assets/aaron-roller.webp" type="image/webp" />
-              <img src="assets/aaron-roller.jpg" alt="Aaron Roller, founder of Living Proof Labs" width="192" height="192" loading="lazy" decoding="async" />
-            </picture>
-            <p>
-              In the early 2000s, GPS was emerging, and most people had no use for it.
-              Aaron helped adapt it to athletes in the world they already lived in.
-              <strong>MotionBased</strong>, acquired by Garmin, became the foundation of
-              <strong>Garmin Connect</strong>—devices still in the wild, serving millions of
-              athletes decades later. Outdoor fitness without GPS is hard to remember.
-              The goal with robots is the same: technology trustworthy enough to be accepted
-              alongside people.
-            </p>
-          </div>
-          <div>
-            <h3 class="timeline-title">Robotics path (recent)</h3>
-            <ul class="timeline">
-              <li>
-                <strong>ANYbotics</strong> — Previously Head of Software Infrastructure &amp; Reliability (Zurich); still working with the team.
-                Helped cut robot-log access for ANYmal industrial inspectors from days of waiting on
-                site to automated triage.
-                <span class="case-studies">Case study:
-                  <a href="https://foxglove.dev/customers/anybotics" rel="noopener noreferrer">Foxglove</a>
-                  ·
-                  <a href="https://www.roboto.ai/blog/agentic-triage/" rel="noopener noreferrer">Roboto</a></span>
-              </li>
-              <li>
-                <strong>Airtonomy</strong> — Robotics integration lead. Autonomous wind-turbine
-                inspection operations, simulation validation, and field reliability.
-              </li>
-              <li>
-                <strong>AutoModality</strong> — Robotics product development lead. Perceptive navigation
-                for autonomous inspection—bridges for Union Pacific, aircraft, mines, and other
-                GPS-denied environments.
-              </li>
-              <li>
-                <strong>GM Cruise</strong> — Autonomous vehicle test operator in San Francisco traffic.
-                Human–robot interaction, safety feedback, and operational reality at city scale.
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="section muted">
-        <div class="container narrow">
-          <h2>Working with us</h2>
-          <p>
-            We are taking early consulting and design partnerships with teams who want rigorous verification, not slide-deck promises. If you ship robot
-            software or integrate humanoids into real venues, we should talk.
+          <p class="proof-means">
+            <strong>Proof</strong> means evidence for specific behaviors under stated conditions—not a claim the robot is ready or safe.
           </p>
-          <p>
-            The human in the loop. San Francisco · Sydney · Zurich · Shanghai.
-            Follow <a class="text-link" href="https://www.linkedin.com/company/living-proof-labs" rel="noopener noreferrer">Living Proof Labs on LinkedIn</a>.
+        </div>
+      </section>
+
+      <section id="report" class="section proof-band" aria-labelledby="report-heading">
+        <div class="container">
+          <p class="eyebrow">Current result</p>
+          <h2 id="report-heading">
+            Unitree G1 · walk-hallway · <span class="fail-mark">FAIL</span> 12/20 passed <span class="proof-need">(18 needed)</span>
+          </h2>
+          <p class="proof-note">Snapshot from CI on main—failures included.</p>
+          <p class="proof-link">
+            <a class="text-link" href="https://docs.livingprooflabs.com/livingproof-verification/">See the live report</a>
+          </p>
+        </div>
+      </section>
+
+      <section id="scope" class="section" aria-labelledby="scope-heading">
+        <div class="container">
+          <h2 id="scope-heading">Scope</h2>
+          <div class="scope-grid">
+            <div class="scope-block">
+              <h3>Simulation now</h3>
+              <p>Engagements run in simulation today, for example MuJoCo missions with graded reports.</p>
+            </div>
+            <div class="scope-block later">
+              <h3>Physical labs</h3>
+              <p>
+                Living Proof Labs physical floors are not operating yet. Work in a client or partner lab is a later path, and only when that lab is named.
+              </p>
+            </div>
+          </div>
+          <p class="tool-row">
+            <span class="label">Tools</span>
+            <a href="https://docs.livingprooflabs.com/">Living Proof Verification™</a>,
+            <a href="https://github.com/Living-Proof-Labs/livingproof-verification">GitHub</a>,
+            <a href="https://foxglove.dev/" rel="noopener noreferrer">Foxglove</a>,
+            <a href="https://www.roboto.ai/" rel="noopener noreferrer">Roboto</a>,
+            <span class="tool-fit">and your stack where it fits</span>
+          </p>
+          <p class="tool-note">
+            Living Proof Verification™ is the open foundation under the engagement. The docs and the source are public.
           </p>
         </div>
       </section>
@@ -395,13 +280,11 @@
           <div class="contact-block">
             <h2>Contact</h2>
             <p>
-              A first conversation covers the robot, the environment it is headed for,
-              and what evidence would convince you it is ready. Early consulting and design
-              partnerships.
+              Tell us the behavior you need evidence for. The opening conversation scopes the engagement.
             </p>
             <!--email_off-->
             <p class="email-line">
-              Email us at <span class="email-address">team@livingprooflabs.com</span>
+              Email us at <span class="email-address">team@<wbr>livingprooflabs.com</span>
             </p>
             <p class="contact-actions">
               <a class="button primary" href="mailto:team@livingprooflabs.com">Open in your mail app</a>
@@ -410,7 +293,7 @@
             <!--/email_off-->
           </div>
           <p class="tagline-footer">
-            <em>Living</em> environments. <em>Proof</em> you can show. That is the whole idea.
+            The human in the loop. San Francisco · Sydney · Zurich · Shanghai.
           </p>
         </div>
       </section>
@@ -424,7 +307,7 @@
           <a href="/terms.html">Terms</a>
           <a href="https://www.linkedin.com/company/living-proof-labs/" rel="noopener noreferrer">LinkedIn</a>
         </p>
-        <p class="footer-note">Simulation-first verification for robots entering human spaces.</p>
+        <p class="footer-note">Verification consulting for humanoid software. Simulation today.</p>
       </div>
     </footer>
   </body>
