@@ -37,8 +37,8 @@ def main() -> None:
         "CNAME",
         ".nojekyll",
         "assets",
-        "assets/aaron-roller.jpg",
-        "assets/aaron-roller.webp",
+        "assets/logo.jpg",
+        "assets/nav.js",
         "favicon.ico",
         "site.webmanifest",
         "assets/favicon.svg",
@@ -48,6 +48,7 @@ def main() -> None:
         "assets/icon-512.png",
         "assets/og.png",
         "styles",
+        "styles/main.css",
     ]
     missing = [path for path in required if not Path(path).exists()]
     if missing:
