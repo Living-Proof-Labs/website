@@ -24,7 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Full history and tags so assemble can hash the previous release's CSS/JS.
+          # Full history and tags so assemble can carry CSS/JS from HEAD^1
+          # and the two newest v* tags. Do not set ASSEMBLE_FIRST_RUN here.
           fetch-depth: 0
           fetch-tags: true
 
@@ -39,9 +40,12 @@ jobs:
           token: ${{ secrets.PAGES_ENABLE_TOKEN != '' && secrets.PAGES_ENABLE_TOKEN || github.token }}
 
       - name: Assemble site
+        # Fails when HEAD^1 and previous v* tags are both unavailable.
+        # First-deploy override (leave unset): ASSEMBLE_FIRST_RUN=1 or --first-run.
         run: python3 tools/assemble_site.py _site
 
       - name: Verify assembled site
+        # Same override as assemble, and it is not set in this workflow.
         run: |
           python3 tools/verify_site.py _site
           python3 tools/check_css.py _site

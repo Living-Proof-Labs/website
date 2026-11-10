@@ -7,16 +7,17 @@ Source files stay unhashed. The output directory (default ./_site) gets:
 - current CSS and JS under name.<sha8>.ext
 - the same current bytes at the unhashed paths (styles/main.css, assets/nav.js)
   so HTML cached from before fingerprinting still resolves
-- the previous release's CSS and JS under their own content hashes, so HTML
-  cached from that deploy still resolves
+- CSS and JS from HEAD^1 and up to the two newest v* tags reachable from
+  HEAD, excluding HEAD itself, under their own content hashes
 
-New HTML references only the current hashed names. The previous release is the
-latest v* tag reachable from HEAD that is not HEAD itself, or main^1 when no
-such tag exists.
+The same content hash is written once. New HTML references only the current
+hashed names. Assembly fails when none of those revisions can be resolved,
+unless ASSEMBLE_FIRST_RUN=1 or --first-run is set for a first deploy.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -125,7 +126,7 @@ def _fingerprint(out: Path) -> dict[str, str]:
     return mapping
 
 
-def assemble(out: Path) -> dict[str, str]:
+def assemble(out: Path, *, first_run: bool = False) -> dict[str, str]:
     source = _source_root()
     out = out if out.is_absolute() else Path.cwd() / out
     out = out.resolve()
@@ -156,7 +157,12 @@ def assemble(out: Path) -> dict[str, str]:
     for src, dest in sorted(mapping.items()):
         print(f"{src} -> {dest}")
         print(f"alias {src}")
-    carry_forward(source, out, set(mapping.values()))
+    carry_forward(
+        source,
+        out,
+        set(mapping.values()),
+        first_run=first_run,
+    )
     return mapping
 
 
@@ -168,31 +174,73 @@ def _git(repo: Path, args: list[str], *, text: bool) -> subprocess.CompletedProc
     )
 
 
-def previous_revision(repo: Path) -> tuple[str, str] | None:
-    """Latest v* tag reachable from HEAD that is not HEAD, else main's parent.
+FIRST_RUN_ENV = "ASSEMBLE_FIRST_RUN"
 
-    Returns (display name, commit sha). None when git cannot see either.
+
+def first_run_enabled(flag: bool = False) -> bool:
+    """True when a first deploy with no parent and no v* tag is explicit."""
+    if flag:
+        return True
+    return os.environ.get(FIRST_RUN_ENV, "").strip().lower() in {"1", "true", "yes"}
+
+
+def carry_forward_revisions(repo: Path) -> list[tuple[str, str]]:
+    """HEAD^1, then the two newest v* tags reachable from HEAD excluding HEAD.
+
+    Each item is (label, full commit sha). The same sha may appear twice when
+    HEAD^1 is also a tag. Empty when git cannot see a first parent or an
+    eligible tag, which is a root commit or a checkout without that history.
     """
-    head = _git(repo, ["rev-parse", "HEAD"], text=True)
+    head = _git(repo, ["rev-parse", "--verify", "HEAD"], text=True)
     if head.returncode != 0:
-        return None
+        return []
     head_sha = head.stdout.strip()
+    revisions: list[tuple[str, str]] = []
+    parent = _git(repo, ["rev-parse", "--verify", "HEAD^1"], text=True)
+    if parent.returncode == 0 and parent.stdout.strip():
+        revisions.append(("HEAD^1", parent.stdout.strip()))
     tags = _git(repo, ["tag", "--merged", "HEAD", "--sort=-v:refname"], text=True)
     if tags.returncode == 0:
+        kept = 0
         for name in tags.stdout.splitlines():
             if not name.startswith("v"):
                 continue
-            peeled = _git(repo, ["rev-parse", f"{name}^{{commit}}"], text=True)
+            peeled = _git(repo, ["rev-parse", "--verify", f"{name}^{{commit}}"], text=True)
             if peeled.returncode != 0:
                 continue
             sha = peeled.stdout.strip()
-            if sha and sha != head_sha:
-                return name, sha
-    for spec in ("main^1", "origin/main^1"):
-        parent = _git(repo, ["rev-parse", "--verify", spec], text=True)
-        if parent.returncode == 0 and parent.stdout.strip():
-            return spec, parent.stdout.strip()
-    return None
+            if not sha or sha == head_sha:
+                continue
+            revisions.append((name, sha))
+            kept += 1
+            if kept == 2:
+                break
+    return revisions
+
+
+def list_revision_assets(repo: Path, sha: str) -> tuple[list[tuple[str, bytes]], str | None]:
+    """CSS and JS a browser could have cached from sha.
+
+    src/worker.js is not published to Pages and is ignored. The second value
+    is an error string when the revision cannot be read.
+    """
+    listing = _git(repo, ["ls-tree", "-r", "--name-only", sha], text=True)
+    if listing.returncode != 0:
+        return [], "cannot list files"
+    paths = [
+        line
+        for line in listing.stdout.splitlines()
+        if (line.startswith("styles/") and line.endswith(".css"))
+        or (line.startswith("assets/") and line.endswith(".js"))
+    ]
+    assets: list[tuple[str, bytes]] = []
+    for rel in paths:
+        blob = _git(repo, ["cat-file", "blob", f"{sha}:{rel}"], text=False)
+        data = blob.stdout
+        if blob.returncode != 0 or not isinstance(data, bytes):
+            return [], f"{rel} not in that revision"
+        assets.append((rel, data))
+    return assets, None
 
 
 def place_carry_forward(
@@ -202,61 +250,77 @@ def place_carry_forward(
     data: bytes,
     current_names: set[str],
 ) -> None:
-    """Write one previous-revision CSS/JS file under its content-hash name."""
+    """Write one previous-revision CSS/JS file under its content-hash name.
+
+    The same bytes are stored once. A path that already holds different bytes
+    is a mismatch and fails the assembly.
+    """
     dest_rel = hashed_relative(rel, data)
     dest = out.joinpath(*dest_rel.split("/"))
-    if dest.is_file() and dest.read_bytes() == data:
-        note = "already present"
-        if dest_rel in current_names:
-            note = "already present; same bytes as current"
-        print(f"carry-forward {label}: {rel} -> {dest_rel} ({note})")
-        return
     if dest.is_file():
-        print(
-            f"carry-forward {label}: {rel} -> {dest_rel} "
-            "skipped, path already has different bytes"
+        existing = dest.read_bytes()
+        if existing == data:
+            if dest_rel in current_names:
+                note = "deduped, same content hash as current"
+            else:
+                note = "deduped, same content hash"
+            print(f"carry-forward {label}: {rel} -> {dest_rel} ({note})")
+            return
+        raise SystemExit(
+            f"carry-forward {label}: {rel} -> {dest_rel} mismatched existing bytes"
         )
-        return
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(data)
     print(f"carry-forward {label}: {rel} -> {dest_rel}")
 
 
-def carry_forward(repo: Path, out: Path, current_names: set[str]) -> None:
-    """Publish the previous release's CSS and JS under their hashed names."""
-    found = previous_revision(repo)
-    if found is None:
-        print("carry-forward: skipped, no previous revision")
-        return
-    name, sha = found
-    label = f"{name} ({sha[:12]})"
-    print(f"carry-forward revision: {label}")
-    listing = _git(repo, ["ls-tree", "-r", "--name-only", sha], text=True)
-    if listing.returncode != 0:
-        print(f"carry-forward {label}: skipped, cannot list files")
-        return
-    # Only files the site can request. src/worker.js is not published to Pages.
-    paths = [
-        line
-        for line in listing.stdout.splitlines()
-        if (line.startswith("styles/") and line.endswith(".css"))
-        or (line.startswith("assets/") and line.endswith(".js"))
-    ]
-    if not paths:
-        print(f"carry-forward {label}: no CSS or JS files")
-        return
-    for rel in paths:
-        blob = _git(repo, ["cat-file", "blob", f"{sha}:{rel}"], text=False)
-        if blob.returncode != 0:
-            print(f"carry-forward {label}: {rel} skipped, file not in that revision")
+def carry_forward(
+    repo: Path,
+    out: Path,
+    current_names: set[str],
+    *,
+    first_run: bool,
+) -> None:
+    """Publish HEAD^1 and recent tags' CSS and JS under their hashed names."""
+    revisions = carry_forward_revisions(repo)
+    if not revisions:
+        if first_run:
+            print(
+                "carry-forward: first-run override, no previous revision "
+                "(HEAD^1 or a v* tag)"
+            )
+            return
+        raise SystemExit(
+            "carry-forward: no previous revision (HEAD^1 or a v* tag). "
+            "Refusing to publish a site that drops CSS and JS that cached HTML may "
+            "still request. Set ASSEMBLE_FIRST_RUN=1 or pass --first-run for the "
+            "first deploy only."
+        )
+    summary = ", ".join(f"{name} ({sha[:12]})" for name, sha in revisions)
+    print(f"carry-forward revisions: {summary}")
+    for name, sha in revisions:
+        label = f"{name} ({sha[:12]})"
+        print(f"carry-forward revision: {label}")
+        assets, error = list_revision_assets(repo, sha)
+        if error is not None:
+            raise SystemExit(f"carry-forward {label}: {error}")
+        if not assets:
+            print(f"carry-forward {label}: no CSS or JS files")
             continue
-        place_carry_forward(out, label, rel, blob.stdout, current_names)
+        for rel, data in assets:
+            place_carry_forward(out, label, rel, data, current_names)
 
 
 def main() -> None:
-    if len(sys.argv) > 2:
-        raise SystemExit("usage: assemble_site.py [OUTPUT_DIR]")
-    assemble(Path(sys.argv[1]) if len(sys.argv) == 2 else Path("_site"))
+    args = sys.argv[1:]
+    flag = "--first-run" in args
+    args = [arg for arg in args if arg != "--first-run"]
+    if len(args) > 1:
+        raise SystemExit("usage: assemble_site.py [--first-run] [OUTPUT_DIR]")
+    assemble(
+        Path(args[0]) if args else Path("_site"),
+        first_run=first_run_enabled(flag),
+    )
 
 
 if __name__ == "__main__":
