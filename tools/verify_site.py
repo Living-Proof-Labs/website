@@ -16,7 +16,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from asset_hash import check_fingerprints, content_hash
+from assemble_site import place_carry_forward, previous_revision
+from asset_hash import check_assembled, check_fingerprints, content_hash
 
 _SOURCE_ONLY = {"assets/nav.js", "styles/main.css"}
 _REQUIRED = [
@@ -82,7 +83,7 @@ def check_tree(assembled: bool) -> None:
         raise SystemExit(f"Unresolved fragment links: {', '.join(unresolved)}")
 
     if assembled:
-        failures = check_fingerprints(Path("."))
+        failures = check_assembled(Path("."))
         if failures:
             details = "\n".join(failures)
             raise SystemExit(f"Fingerprinted CSS/JS check failed:\n{details}")
@@ -117,10 +118,11 @@ def self_test() -> int:
         tmp = Path(tmp_name)
         assembled = tmp / "site"
         proc = _run([sys.executable, str(assemble), str(assembled)])
+        assemble_log = proc.stdout
         if proc.returncode != 0:
             errors.append(f"assemble failed:\n{proc.stdout}{proc.stderr}")
         else:
-            print(proc.stdout.strip())
+            print(assemble_log.strip())
             proc = _run([sys.executable, str(verify), str(assembled)])
             if proc.returncode != 0:
                 errors.append(
@@ -145,8 +147,22 @@ def self_test() -> int:
                 errors.append("assembled CSS is missing or does not match source bytes")
             if not hashed_js.is_file() or hashed_js.read_bytes() != source_bytes[repo / "assets" / "nav.js"]:
                 errors.append("assembled JS is missing or does not match source bytes")
-            if (assembled / "styles" / "main.css").exists() or (assembled / "assets" / "nav.js").exists():
-                errors.append("assembled site still contains unhashed CSS or JS filenames")
+            alias_css = assembled / "styles" / "main.css"
+            alias_js = assembled / "assets" / "nav.js"
+            if not alias_css.is_file() or alias_css.read_bytes() != source_bytes[repo / "styles" / "main.css"]:
+                errors.append("transition alias styles/main.css is missing or is not the current bytes")
+            if not alias_js.is_file() or alias_js.read_bytes() != source_bytes[repo / "assets" / "nav.js"]:
+                errors.append("transition alias assets/nav.js is missing or is not the current bytes")
+            if (assembled / "src").exists() or any(assembled.rglob("worker*.js")):
+                errors.append("assembly published src/worker.js")
+            revision = previous_revision(repo)
+            if revision is None:
+                errors.append("carry-forward found no previous revision in this checkout")
+            else:
+                display, sha = revision
+                marker = f"carry-forward revision: {display} ({sha[:12]})"
+                if marker not in assemble_log:
+                    errors.append(f"assemble log missing {marker!r}\n{assemble_log}")
             if (assembled / "site.webmanifest").read_bytes() != source_bytes[repo / "site.webmanifest"]:
                 errors.append("manifest changed even though it references no CSS or JS")
 
@@ -186,10 +202,10 @@ def self_test() -> int:
             )
             proc = _run([sys.executable, str(verify), str(unhashed)])
             output = proc.stderr + proc.stdout
-            if proc.returncode == 0 or "unhashed" not in output:
-                errors.append(f"unhashed reference should fail:\n{output}")
+            if proc.returncode == 0 or "unhashed" not in output or "transition alias" not in output:
+                errors.append(f"unhashed alias reference should fail:\n{output}")
             else:
-                print("negative: unhashed CSS reference failed as expected")
+                print("negative: HTML reference to transition alias failed as expected")
                 print(output.strip())
 
             missing = tmp / "missing"
@@ -208,6 +224,70 @@ def self_test() -> int:
             else:
                 print("negative: missing fingerprinted CSS failed as expected")
                 print(output.strip())
+
+            no_alias = tmp / "no-alias"
+            shutil.copytree(assembled, no_alias)
+            (no_alias / "styles" / "main.css").unlink()
+            proc = _run([sys.executable, str(verify), str(no_alias)])
+            output = proc.stderr + proc.stdout
+            if proc.returncode == 0 or "missing transition alias" not in output:
+                errors.append(f"missing transition alias should fail:\n{output}")
+            else:
+                print("negative: missing transition alias failed as expected")
+                print(output.strip())
+
+            carried_ok = tmp / "carried-ok"
+            shutil.copytree(assembled, carried_ok)
+            extra = b"/* previous release */\nbody{color:#123456}\n"
+            extra_digest = content_hash(extra)
+            extra_name = f"main.{extra_digest}.css"
+            (carried_ok / "styles" / extra_name).write_bytes(extra)
+            proc = _run([sys.executable, str(verify), str(carried_ok)])
+            if proc.returncode != 0:
+                errors.append(
+                    f"unreferenced carry-forward file should pass:\n{proc.stdout}{proc.stderr}"
+                )
+            else:
+                print("positive: unreferenced carry-forward file passed")
+
+            carried_ref = tmp / "carried-ref"
+            shutil.copytree(carried_ok, carried_ref)
+            carried_index = carried_ref / "index.html"
+            carried_index.write_text(
+                carried_index.read_text(encoding="utf-8").replace(
+                    f"styles/{css_name}", f"styles/{extra_name}"
+                ),
+                encoding="utf-8",
+            )
+            proc = _run([sys.executable, str(verify), str(carried_ref)])
+            output = proc.stderr + proc.stdout
+            if proc.returncode == 0 or "carried-forward" not in output:
+                errors.append(f"HTML reference to carry-forward file should fail:\n{output}")
+            else:
+                print("negative: HTML reference to carry-forward file failed as expected")
+                print(output.strip())
+
+            carried_bad = tmp / "carried-bad"
+            shutil.copytree(assembled, carried_bad)
+            (carried_bad / "styles" / "main.0123abcd.css").write_bytes(b"not-the-hash\n")
+            proc = _run([sys.executable, str(verify), str(carried_bad)])
+            output = proc.stderr + proc.stdout
+            if proc.returncode == 0 or "does not match" not in output or "carried-forward" not in output:
+                errors.append(f"carry-forward hash mismatch should fail:\n{output}")
+            else:
+                print("negative: carry-forward hash mismatch failed as expected")
+                print(output.strip())
+
+            placed = tmp / "placed"
+            (placed / "styles").mkdir(parents=True)
+            previous_css = b"old-css\n"
+            place_carry_forward(placed, "v0 (abc123def456)", "styles/main.css", previous_css, set())
+            placed_name = f"main.{content_hash(previous_css)}.css"
+            placed_file = placed / "styles" / placed_name
+            if not placed_file.is_file() or placed_file.read_bytes() != previous_css:
+                errors.append("carry-forward did not write a distinct previous hash")
+            else:
+                print(f"positive: distinct carry-forward file styles/{placed_name}")
 
         mismatch = tmp / "mismatch"
         (mismatch / "styles").mkdir(parents=True)

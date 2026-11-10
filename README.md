@@ -18,7 +18,7 @@ Open http://127.0.0.1:8765
 
 ## Deploy
 
-Push to `main`. The workflow assembles `_site` from `index.html`, `404.html`, `privacy.html`, `terms.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll`, then publishes that directory to GitHub Pages. CSS and JavaScript filenames in the assembly are content-hashed (`styles/main.<sha256-8>.css`, `assets/nav.<sha256-8>.js`) and HTML references are rewritten to match. Files in the repository stay unhashed, so `python3 -m http.server` still serves the source tree. The legal pages are drafts pending counsel, not a completed review.
+Push to `main`. The workflow assembles `_site` from `index.html`, `404.html`, `privacy.html`, `terms.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll`, then publishes that directory to GitHub Pages. CSS and JavaScript filenames in the assembly are content-hashed (`styles/main.<sha256-8>.css`, `assets/nav.<sha256-8>.js`) and new HTML references only those current names. The assembly also keeps `styles/main.css` and `assets/nav.js` with the current bytes, and the previous release's CSS and JS under their content hashes, so HTML cached from before the deploy still resolves. Files in the repository stay unhashed, so `python3 -m http.server` still serves the source tree. The legal pages are drafts pending counsel, not a completed review.
 
 Creating the Pages site the first time needs repository administration, and a workflow cannot grant that to `GITHUB_TOKEN` (`administration` is not a valid workflow permission). Either:
 

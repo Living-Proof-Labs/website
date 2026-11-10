@@ -18,6 +18,9 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 HASH_LEN = 8
+# Unhashed names kept in the assembly so HTML cached from before fingerprinting
+# still resolves. Their bytes are the current release; new HTML must not use them.
+TRANSITION_ALIASES = ("styles/main.css", "assets/nav.js")
 _FINGERPRINT = re.compile(
     rf"^(?P<stem>.+)\.(?P<hash>[0-9a-f]{{{HASH_LEN}}})\.(?P<ext>css|js)$"
 )
@@ -31,6 +34,16 @@ _JS_QUOTED_ASSET = re.compile(r"""['"]([^'"]+\.(?:css|js))['"]""", re.IGNORECASE
 
 def content_hash(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:HASH_LEN]
+
+
+def unhashed_name(rel_posix: str) -> str | None:
+    """Map styles/main.<sha8>.css back to styles/main.css, if it is fingerprinted."""
+    parent, name = posixpath.split(rel_posix)
+    match = _FINGERPRINT.fullmatch(name)
+    if match is None:
+        return None
+    plain = f"{match.group('stem')}.{match.group('ext')}"
+    return posixpath.join(parent, plain) if parent else plain
 
 
 def hashed_relative(rel_posix: str, data: bytes) -> str:
@@ -183,4 +196,115 @@ def check_fingerprints(root: Path) -> list[str]:
                 failures.append(
                     f"{where} content hash {actual} does not match filename {key}"
                 )
+    return failures
+
+
+def _css_js_files(root: Path) -> list[Path]:
+    return sorted(
+        path
+        for pattern in ("**/*.css", "**/*.js")
+        for path in root.glob(pattern)
+        if path.is_file()
+    )
+
+
+def _documents(root: Path) -> list[Path]:
+    return sorted(
+        (
+            path
+            for path in root.rglob("*")
+            if path.is_file() and path.suffix in {".html", ".webmanifest"}
+        ),
+        key=lambda path: path.as_posix(),
+    )
+
+
+def check_assembled(root: Path) -> list[str]:
+    """Check an assembled _site: aliases, current HTML refs, and carry-forward.
+
+    Transition aliases (styles/main.css, assets/nav.js) must exist and match the
+    current hashed files. Every HTML or manifest CSS/JS reference must be one of
+    those current hashed names. Other fingerprinted files are carry-forward
+    copies: their filename hash must match their bytes, and HTML must not
+    reference them.
+    """
+    failures: list[str] = []
+    current: dict[str, str] = {}
+    for alias in TRANSITION_ALIASES:
+        path = root.joinpath(*alias.split("/"))
+        if not path.is_file():
+            failures.append(f"missing transition alias {alias}")
+            continue
+        data = path.read_bytes()
+        hashed = hashed_relative(alias, data)
+        current[alias] = hashed
+        hashed_path = root.joinpath(*hashed.split("/"))
+        if not hashed_path.is_file() or hashed_path.read_bytes() != data:
+            failures.append(f"current hashed file {hashed} does not match alias {alias}")
+
+    current_names = set(current.values())
+    carried: set[str] = set()
+    alias_set = set(TRANSITION_ALIASES)
+    for path in _css_js_files(root):
+        rel = path.relative_to(root).as_posix()
+        if rel in alias_set:
+            continue
+        match = _FINGERPRINT.fullmatch(path.name)
+        data = path.read_bytes()
+        if match is None:
+            failures.append(f"{rel} is an unhashed CSS/JS file and not a transition alias")
+            continue
+        actual = content_hash(data)
+        kind = "current" if rel in current_names else "carried-forward"
+        if actual != match.group("hash"):
+            failures.append(f"{kind} file {rel} content hash {actual} does not match filename")
+            continue
+        if rel not in current_names:
+            carried.add(rel)
+
+    for path in _documents(root):
+        doc_rel = path.relative_to(root).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if path.suffix == ".html":
+            urls = html_reference_urls(text)
+        else:
+            try:
+                urls = manifest_reference_urls(text)
+            except json.JSONDecodeError as exc:
+                failures.append(f"{doc_rel}: invalid webmanifest ({exc})")
+                continue
+        for url in urls:
+            key = site_relative_key(doc_rel, url)
+            if key is None:
+                continue
+            where = f"{doc_rel}: {url}"
+            if key in alias_set:
+                failures.append(f"{where} references unhashed transition alias {key}")
+                continue
+            if key in current_names:
+                target = root.joinpath(*key.split("/"))
+                if not target.is_file():
+                    failures.append(f"{where} references missing CSS/JS asset {key}")
+                continue
+            target = root.joinpath(*key.split("/"))
+            name = posixpath.basename(key)
+            match = _FINGERPRINT.fullmatch(name)
+            plain = unhashed_name(key) if match is not None else None
+            if plain in alias_set and plain not in current:
+                continue
+            if key in carried or (
+                match is not None
+                and target.is_file()
+                and content_hash(target.read_bytes()) == match.group("hash")
+            ):
+                failures.append(f"{where} references carried-forward CSS/JS asset {key}")
+                continue
+            if match is None:
+                failures.append(f"{where} references unhashed CSS/JS asset {key}")
+                continue
+            if not target.is_file():
+                failures.append(f"{where} references missing CSS/JS asset {key}")
+                continue
+            actual = content_hash(target.read_bytes())
+            failures.append(f"{where} content hash {actual} does not match filename {key}")
     return failures

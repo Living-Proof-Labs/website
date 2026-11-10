@@ -2,16 +2,24 @@
 # SPDX-License-Identifier: Apache-2.0
 """Assemble the GitHub Pages site and content-hash CSS and JavaScript filenames.
 
-Source files stay unhashed. The output directory (default ./_site) gets copies
-whose CSS and JS names include the first 8 hex characters of SHA-256 over the
-file bytes. href and src in HTML, and string values in the web manifest, are
-rewritten to those names. Other asset bytes are copied unchanged.
+Source files stay unhashed. The output directory (default ./_site) gets:
+
+- current CSS and JS under name.<sha8>.ext
+- the same current bytes at the unhashed paths (styles/main.css, assets/nav.js)
+  so HTML cached from before fingerprinting still resolves
+- the previous release's CSS and JS under their own content hashes, so HTML
+  cached from that deploy still resolves
+
+New HTML references only the current hashed names. The previous release is the
+latest v* tag reachable from HEAD that is not HEAD itself, or main^1 when no
+such tag exists.
 """
 
 from __future__ import annotations
 
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -111,8 +119,9 @@ def _fingerprint(out: Path) -> dict[str, str]:
         dest = out.joinpath(*dest_rel.split("/"))
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(data)
-        if src.resolve() != dest.resolve():
-            src.unlink()
+        # Keep the unhashed path as a transition alias of the current bytes.
+        if not src.is_file():
+            src.write_bytes(data)
     return mapping
 
 
@@ -146,7 +155,102 @@ def assemble(out: Path) -> dict[str, str]:
             path.write_text(rewritten, encoding="utf-8")
     for src, dest in sorted(mapping.items()):
         print(f"{src} -> {dest}")
+        print(f"alias {src}")
+    carry_forward(source, out, set(mapping.values()))
     return mapping
+
+
+def _git(repo: Path, args: list[str], *, text: bool) -> subprocess.CompletedProcess[bytes] | subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=text,
+    )
+
+
+def previous_revision(repo: Path) -> tuple[str, str] | None:
+    """Latest v* tag reachable from HEAD that is not HEAD, else main's parent.
+
+    Returns (display name, commit sha). None when git cannot see either.
+    """
+    head = _git(repo, ["rev-parse", "HEAD"], text=True)
+    if head.returncode != 0:
+        return None
+    head_sha = head.stdout.strip()
+    tags = _git(repo, ["tag", "--merged", "HEAD", "--sort=-v:refname"], text=True)
+    if tags.returncode == 0:
+        for name in tags.stdout.splitlines():
+            if not name.startswith("v"):
+                continue
+            peeled = _git(repo, ["rev-parse", f"{name}^{{commit}}"], text=True)
+            if peeled.returncode != 0:
+                continue
+            sha = peeled.stdout.strip()
+            if sha and sha != head_sha:
+                return name, sha
+    for spec in ("main^1", "origin/main^1"):
+        parent = _git(repo, ["rev-parse", "--verify", spec], text=True)
+        if parent.returncode == 0 and parent.stdout.strip():
+            return spec, parent.stdout.strip()
+    return None
+
+
+def place_carry_forward(
+    out: Path,
+    label: str,
+    rel: str,
+    data: bytes,
+    current_names: set[str],
+) -> None:
+    """Write one previous-revision CSS/JS file under its content-hash name."""
+    dest_rel = hashed_relative(rel, data)
+    dest = out.joinpath(*dest_rel.split("/"))
+    if dest.is_file() and dest.read_bytes() == data:
+        note = "already present"
+        if dest_rel in current_names:
+            note = "already present; same bytes as current"
+        print(f"carry-forward {label}: {rel} -> {dest_rel} ({note})")
+        return
+    if dest.is_file():
+        print(
+            f"carry-forward {label}: {rel} -> {dest_rel} "
+            "skipped, path already has different bytes"
+        )
+        return
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    print(f"carry-forward {label}: {rel} -> {dest_rel}")
+
+
+def carry_forward(repo: Path, out: Path, current_names: set[str]) -> None:
+    """Publish the previous release's CSS and JS under their hashed names."""
+    found = previous_revision(repo)
+    if found is None:
+        print("carry-forward: skipped, no previous revision")
+        return
+    name, sha = found
+    label = f"{name} ({sha[:12]})"
+    print(f"carry-forward revision: {label}")
+    listing = _git(repo, ["ls-tree", "-r", "--name-only", sha], text=True)
+    if listing.returncode != 0:
+        print(f"carry-forward {label}: skipped, cannot list files")
+        return
+    # Only files the site can request. src/worker.js is not published to Pages.
+    paths = [
+        line
+        for line in listing.stdout.splitlines()
+        if (line.startswith("styles/") and line.endswith(".css"))
+        or (line.startswith("assets/") and line.endswith(".js"))
+    ]
+    if not paths:
+        print(f"carry-forward {label}: no CSS or JS files")
+        return
+    for rel in paths:
+        blob = _git(repo, ["cat-file", "blob", f"{sha}:{rel}"], text=False)
+        if blob.returncode != 0:
+            print(f"carry-forward {label}: {rel} skipped, file not in that revision")
+            continue
+        place_carry_forward(out, label, rel, blob.stdout, current_names)
 
 
 def main() -> None:
