@@ -5,10 +5,15 @@
 Without arguments, checks the source tree, where CSS and JS stay unhashed.
 With a root (the assembled _site), every HTML or manifest reference to a local
 CSS or JS file must be a content-hashed filename that exists and matches the
-file bytes. `--self-test` assembles a temporary site and covers the failure cases.
+file bytes. Inside a git checkout, CSS and JS from HEAD^1 and the two newest
+v* tags must be present under their content hashes. That check fails when no
+previous revision is visible unless --first-run or ASSEMBLE_FIRST_RUN is set.
+`--self-test` assembles a temporary site and covers the failure cases.
 """
 
 from html.parser import HTMLParser
+from contextlib import redirect_stdout
+import io
 import os
 import shutil
 import subprocess
@@ -16,8 +21,20 @@ import sys
 import tempfile
 from pathlib import Path
 
-from assemble_site import place_carry_forward, previous_revision
-from asset_hash import check_assembled, check_fingerprints, content_hash
+from assemble_site import (
+    carry_forward_revisions,
+    first_run_enabled,
+    list_revision_assets,
+    place_carry_forward,
+)
+from asset_hash import (
+    TRANSITION_ALIASES,
+    check_assembled,
+    check_fingerprints,
+    content_hash,
+    hashed_relative,
+    unhashed_name,
+)
 
 _SOURCE_ONLY = {"assets/nav.js", "styles/main.css"}
 _REQUIRED = [
@@ -71,7 +88,7 @@ def _required(assembled: bool) -> list[str]:
     return list(_REQUIRED)
 
 
-def check_tree(assembled: bool) -> None:
+def check_tree(assembled: bool, *, first_run: bool = False) -> None:
     missing = [path for path in _required(assembled) if not Path(path).exists()]
     if missing:
         raise SystemExit(f"Missing deploy inputs: {', '.join(missing)}")
@@ -83,14 +100,99 @@ def check_tree(assembled: bool) -> None:
         raise SystemExit(f"Unresolved fragment links: {', '.join(unresolved)}")
 
     if assembled:
-        failures = check_assembled(Path("."))
+        root = Path(".")
+        failures = check_assembled(root)
+        failures.extend(check_unique_hashed_assets(root))
+        repo = _git_root(root)
+        if repo is not None:
+            failures.extend(
+                check_revision_carry_forward(repo, root, first_run=first_run)
+            )
         if failures:
             details = "\n".join(failures)
             raise SystemExit(f"Fingerprinted CSS/JS check failed:\n{details}")
 
 
-def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
+def _run(
+    cmd: list[str],
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, env=env)
+
+
+def _git_root(start: Path) -> Path | None:
+    proc = _run(["git", "-C", str(start), "rev-parse", "--show-toplevel"])
+    if proc.returncode != 0:
+        return None
+    path = Path(proc.stdout.strip())
+    return path if path.is_dir() else None
+
+
+def check_unique_hashed_assets(root: Path) -> list[str]:
+    """Fingerprinted CSS/JS bytes match their names and are stored once.
+
+    Transition aliases are the same bytes as the current hashed files and are
+    not counted. Two fingerprinted files with identical bytes are a duplicate.
+    A filename whose hash is not the SHA-256 prefix of its bytes is a mismatch.
+    """
+    failures: list[str] = []
+    seen: dict[bytes, str] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.suffix not in {".css", ".js"}:
+            continue
+        rel = path.relative_to(root).as_posix()
+        if rel in TRANSITION_ALIASES:
+            continue
+        data = path.read_bytes()
+        plain = unhashed_name(rel)
+        if plain is None:
+            failures.append(f"unhashed CSS/JS file is not a transition alias: {rel}")
+            continue
+        if hashed_relative(plain, data) != rel:
+            failures.append(
+                f"mismatched file {rel}: content hash {content_hash(data)} "
+                "does not match filename"
+            )
+            continue
+        prior = seen.get(data)
+        if prior is not None:
+            failures.append(f"duplicate content hash in {prior} and {rel}")
+            continue
+        seen[data] = rel
+    return failures
+
+
+def check_revision_carry_forward(repo: Path, root: Path, *, first_run: bool) -> list[str]:
+    """Require hashed CSS/JS from HEAD^1 and the two newest eligible v* tags."""
+    revisions = carry_forward_revisions(repo)
+    if not revisions:
+        if first_run:
+            return []
+        return [
+            "no previous revision (HEAD^1 or a v* tag); "
+            "pass --first-run or set ASSEMBLE_FIRST_RUN=1 for the first deploy only"
+        ]
+    failures: list[str] = []
+    for name, sha in revisions:
+        label = f"{name} ({sha[:12]})"
+        assets, error = list_revision_assets(repo, sha)
+        if error is not None:
+            failures.append(f"carry-forward {label}: {error}")
+            continue
+        for rel, data in assets:
+            dest_rel = hashed_relative(rel, data)
+            dest = root.joinpath(*dest_rel.split("/"))
+            kind = (
+                "HEAD^1 carry-forward"
+                if name == "HEAD^1"
+                else f"carry-forward from {label}"
+            )
+            if not dest.is_file():
+                failures.append(f"missing {kind} {dest_rel}")
+            elif dest.read_bytes() != data:
+                failures.append(f"mismatched {kind} {dest_rel}")
+    return failures
 
 
 def self_test() -> int:
@@ -155,14 +257,41 @@ def self_test() -> int:
                 errors.append("transition alias assets/nav.js is missing or is not the current bytes")
             if (assembled / "src").exists() or any(assembled.rglob("worker*.js")):
                 errors.append("assembly published src/worker.js")
-            revision = previous_revision(repo)
-            if revision is None:
+            revisions = carry_forward_revisions(repo)
+            if not revisions:
                 errors.append("carry-forward found no previous revision in this checkout")
             else:
-                display, sha = revision
-                marker = f"carry-forward revision: {display} ({sha[:12]})"
-                if marker not in assemble_log:
-                    errors.append(f"assemble log missing {marker!r}\n{assemble_log}")
+                labels = [label for label, _sha in revisions]
+                print(
+                    "carry-forward revisions: "
+                    + ", ".join(f"{label} ({sha[:12]})" for label, sha in revisions)
+                )
+                if labels[0] != "HEAD^1":
+                    errors.append(f"carry-forward revisions do not start with HEAD^1: {labels}")
+                tags = [label for label in labels if label.startswith("v")]
+                if len(tags) != 2:
+                    errors.append(f"expected the last 2 v* tags, got {tags}")
+                head_sha = _run(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout.strip()
+                if any(sha == head_sha for _label, sha in revisions):
+                    errors.append("HEAD itself was included in carry-forward")
+                for display, sha in revisions:
+                    marker = f"carry-forward revision: {display} ({sha[:12]})"
+                    if marker not in assemble_log:
+                        errors.append(f"assemble log missing {marker!r}\n{assemble_log}")
+                history = check_revision_carry_forward(repo, assembled, first_run=False)
+                if history:
+                    errors.append(
+                        "assembled site failed carry-forward history check:\n"
+                        + "\n".join(history)
+                    )
+                else:
+                    print("positive: HEAD^1 and the last 2 tags are carried forward")
+                unique = check_unique_hashed_assets(assembled)
+                if unique:
+                    errors.append(
+                        "real assembly has duplicate or mismatched files:\n"
+                        + "\n".join(unique)
+                    )
             if (assembled / "site.webmanifest").read_bytes() != source_bytes[repo / "site.webmanifest"]:
                 errors.append("manifest changed even though it references no CSS or JS")
 
@@ -289,6 +418,46 @@ def self_test() -> int:
             else:
                 print(f"positive: distinct carry-forward file styles/{placed_name}")
 
+            deduped_dir = tmp / "deduped"
+            (deduped_dir / "styles").mkdir(parents=True)
+            dedupe_log = io.StringIO()
+            with redirect_stdout(dedupe_log):
+                place_carry_forward(
+                    deduped_dir, "v0.0.2 (aaaaaaaaaaaa)", "styles/main.css", previous_css, set()
+                )
+                place_carry_forward(
+                    deduped_dir, "v0.0.1 (bbbbbbbbbbbb)", "styles/main.css", previous_css, set()
+                )
+            deduped_files = list((deduped_dir / "styles").glob("*.css"))
+            dedupe_text = dedupe_log.getvalue()
+            if (
+                len(deduped_files) != 1
+                or deduped_files[0].read_bytes() != previous_css
+                or "deduped, same content hash" not in dedupe_text
+                or check_unique_hashed_assets(deduped_dir)
+            ):
+                errors.append(f"place_carry_forward did not dedupe:\n{dedupe_text}")
+            else:
+                print("dedupe: identical content left one matching file")
+
+            collision = tmp / "collision"
+            (collision / "styles").mkdir(parents=True)
+            collision_rel = hashed_relative("styles/main.css", previous_css)
+            collision_path = collision.joinpath(*collision_rel.split("/"))
+            collision_path.write_bytes(b"different-bytes\n")
+            try:
+                place_carry_forward(
+                    collision, "HEAD^1 (abc123def456)", "styles/main.css", previous_css, set()
+                )
+            except SystemExit as exc:
+                if "mismatched" not in str(exc):
+                    errors.append(f"carry-forward byte mismatch raised the wrong error: {exc}")
+                else:
+                    print("negative: carry-forward byte mismatch failed as expected")
+                    print(str(exc))
+            else:
+                errors.append("mismatched carry-forward bytes should fail")
+
         mismatch = tmp / "mismatch"
         (mismatch / "styles").mkdir(parents=True)
         body = b"body{color:#051722}\n"
@@ -323,6 +492,8 @@ def self_test() -> int:
         else:
             print("positive: external stylesheet ignored; absolute fingerprinted CSS passed")
 
+    _carry_forward_fixture_tests(repo, errors)
+
     for path, data in source_bytes.items():
         if path.read_bytes() != data:
             errors.append(f"source file was modified: {path}")
@@ -334,15 +505,292 @@ def self_test() -> int:
     return 0
 
 
+def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    proc = subprocess.run(
+        ["git", "-C", str(repo), *args],
+        text=True,
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed: {proc.stderr}")
+    return proc
+
+
+def _commit(repo: Path, message: str) -> None:
+    _git(repo, "add", "-A")
+    _git(
+        repo,
+        "-c",
+        "user.name=Carry Forward",
+        "-c",
+        "user.email=carry-forward@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "-m",
+        message,
+    )
+
+
+def _tag(repo: Path, name: str) -> None:
+    _git(repo, "-c", "tag.gpgsign=false", "tag", name)
+
+
+def _seed_site(dest: Path, source: Path) -> None:
+    for name in (
+        "index.html",
+        "404.html",
+        "privacy.html",
+        "terms.html",
+        "CNAME",
+        ".nojekyll",
+        "favicon.ico",
+        "site.webmanifest",
+    ):
+        shutil.copy2(source / name, dest / name)
+    shutil.copytree(source / "assets", dest / "assets")
+    shutil.copytree(source / "styles", dest / "styles")
+    tools = dest / "tools"
+    tools.mkdir()
+    for name in ("assemble_site.py", "asset_hash.py", "verify_site.py"):
+        shutil.copy2(source / "tools" / name, tools / name)
+
+
+def _mark(path: Path, marker: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    needle = "/* carry-forward-marker:"
+    if needle in text:
+        text = text[: text.rindex(needle)].rstrip() + "\n"
+    path.write_text(f"{text}\n/* carry-forward-marker: {marker} */\n", encoding="utf-8")
+
+
+def _blob(repo: Path, rev: str, rel: str) -> bytes:
+    proc = subprocess.run(
+        ["git", "-C", str(repo), "cat-file", "blob", f"{rev}:{rel}"],
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.decode())
+    return proc.stdout
+
+
+def _css_js_files(root: Path) -> dict[str, bytes]:
+    found: dict[str, bytes] = {}
+    for folder in ("styles", "assets"):
+        for path in (root / folder).rglob("*"):
+            if path.is_file() and path.suffix in {".css", ".js"}:
+                found[path.relative_to(root).as_posix()] = path.read_bytes()
+    return found
+
+
+def _carry_forward_fixture_tests(source: Path, errors: list[str]) -> None:
+    """Negative cases that need a git history different from this checkout."""
+    try:
+        _history_fixture(source, errors)
+        _first_run_fixture(source, errors)
+    except RuntimeError as exc:
+        errors.append(f"carry-forward fixture failed: {exc}")
+
+
+def _history_fixture(source: Path, errors: list[str]) -> None:
+    with tempfile.TemporaryDirectory() as tmp_name:
+        repo = Path(tmp_name) / "repo"
+        repo.mkdir()
+        _seed_site(repo, source)
+        _git(repo, "init", "-b", "main")
+        _mark(repo / "styles" / "main.css", "A")
+        _mark(repo / "assets" / "nav.js", "J1")
+        _commit(repo, "base")
+        _tag(repo, "v0.0.1")
+
+        index = repo / "index.html"
+        index.write_text(index.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+        _commit(repo, "same css and js")
+        _tag(repo, "v0.0.2")
+
+        _mark(repo / "styles" / "main.css", "C")
+        _commit(repo, "head parent")
+
+        _mark(repo / "styles" / "main.css", "D")
+        _mark(repo / "assets" / "nav.js", "J2")
+        _commit(repo, "head")
+        _tag(repo, "v9.9.9")
+
+        assemble = repo / "tools" / "assemble_site.py"
+        verify = repo / "tools" / "verify_site.py"
+        site = repo / "_site"
+        proc = _run([sys.executable, str(assemble), str(site)])
+        log = proc.stdout + proc.stderr
+        if proc.returncode != 0:
+            errors.append(f"history fixture assemble failed:\n{log}")
+            return
+        for label in ("HEAD^1", "v0.0.2", "v0.0.1"):
+            if f"carry-forward revision: {label} (" not in log:
+                errors.append(f"history fixture log missing {label}:\n{log}")
+        if "carry-forward revision: v9.9.9 (" in log:
+            errors.append("history fixture carried the tag on HEAD")
+        if "deduped, same content hash" not in log:
+            errors.append(f"history fixture did not dedupe:\n{log}")
+
+        css_a = _blob(repo, "v0.0.1", "styles/main.css")
+        css_c = _blob(repo, "HEAD^1", "styles/main.css")
+        css_d = _blob(repo, "HEAD", "styles/main.css")
+        js_1 = _blob(repo, "v0.0.1", "assets/nav.js")
+        js_2 = _blob(repo, "HEAD", "assets/nav.js")
+        if css_a != _blob(repo, "v0.0.2", "styles/main.css"):
+            errors.append("history fixture tags were supposed to share CSS bytes")
+            return
+        expected = {
+            "styles/main.css": css_d,
+            hashed_relative("styles/main.css", css_d): css_d,
+            hashed_relative("styles/main.css", css_a): css_a,
+            hashed_relative("styles/main.css", css_c): css_c,
+            "assets/nav.js": js_2,
+            hashed_relative("assets/nav.js", js_2): js_2,
+            hashed_relative("assets/nav.js", js_1): js_1,
+        }
+        actual = _css_js_files(site)
+        identity = check_unique_hashed_assets(site)
+        if actual != expected or identity:
+            errors.append(
+                "dedupe left duplicate or mismatched files:\n"
+                f"expected {sorted(expected)}\nactual {sorted(actual)}\n{identity}"
+            )
+        else:
+            print("dedupe: no duplicate or mismatched files")
+
+        carried_css = hashed_relative("styles/main.css", css_c)
+        current_css = hashed_relative("styles/main.css", css_d)
+        index_html = (site / "index.html").read_text(encoding="utf-8")
+        if (
+            f"styles/{Path(current_css).name}" not in index_html
+            or f"styles/{Path(carried_css).name}" in index_html
+            or 'href="styles/main.css"' in index_html
+        ):
+            errors.append("history fixture HTML does not reference only the current hash")
+
+        proc = _run([sys.executable, str(verify), str(site)])
+        if proc.returncode != 0:
+            errors.append(
+                f"history fixture verify should pass:\n{proc.stdout}{proc.stderr}"
+            )
+
+        head_file = site.joinpath(*carried_css.split("/"))
+        saved = head_file.read_bytes()
+        head_file.unlink()
+        proc = _run([sys.executable, str(verify), str(site)])
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or "missing HEAD^1 carry-forward" not in output:
+            errors.append(f"missing HEAD^1 carry-forward should fail:\n{output}")
+        else:
+            print("negative: missing HEAD^1 carry-forward failed as expected")
+            print(output.strip())
+        head_file.write_bytes(saved)
+
+        duplicate = site.joinpath(*hashed_relative("assets/main.css", css_a).split("/"))
+        duplicate.write_bytes(css_a)
+        identity = check_unique_hashed_assets(site)
+        proc = _run([sys.executable, str(verify), str(site)])
+        output = proc.stdout + proc.stderr
+        if (
+            proc.returncode == 0
+            or not any("duplicate" in item for item in identity)
+            or "duplicate" not in output
+        ):
+            errors.append(f"duplicate hashed file should fail:\n{identity}\n{output}")
+        else:
+            print("negative: duplicate hashed file failed as expected")
+            print(output.strip())
+        duplicate.unlink()
+
+        head_file.write_bytes(b"not-the-bytes\n")
+        identity = check_unique_hashed_assets(site)
+        proc = _run([sys.executable, str(verify), str(site)])
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or not any("mismatched" in item for item in identity):
+            errors.append(f"dedupe mismatch should fail:\n{identity}\n{output}")
+        elif "mismatched" not in output:
+            errors.append(f"verify should report the dedupe mismatch:\n{output}")
+        else:
+            print("negative: dedupe mismatch failed as expected")
+            print(output.strip())
+
+
+def _first_run_fixture(source: Path, errors: list[str]) -> None:
+    with tempfile.TemporaryDirectory() as tmp_name:
+        repo = Path(tmp_name) / "repo"
+        repo.mkdir()
+        _seed_site(repo, source)
+        _git(repo, "init", "-b", "main")
+        _commit(repo, "only")
+        assemble = repo / "tools" / "assemble_site.py"
+        verify = repo / "tools" / "verify_site.py"
+        site = repo / "_site"
+
+        proc = _run([sys.executable, str(assemble), str(site)])
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or "no previous revision" not in output:
+            errors.append(f"assemble without previous revision should fail:\n{output}")
+        else:
+            print("negative: no previous revision without the override failed assemble")
+            print(output.strip())
+
+        proc = _run([sys.executable, str(verify), str(site)])
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or "no previous revision" not in output:
+            errors.append(f"verify without previous revision should fail:\n{output}")
+        else:
+            print("negative: no previous revision without the override failed verify")
+            print(output.strip())
+
+        proc = _run([sys.executable, str(assemble), "--first-run", str(site)])
+        if proc.returncode != 0 or "first-run override" not in proc.stdout:
+            errors.append(
+                f"assemble --first-run should pass:\n{proc.stdout}{proc.stderr}"
+            )
+            return
+        proc = _run([sys.executable, str(verify), "--first-run", str(site)])
+        if proc.returncode != 0:
+            errors.append(f"verify --first-run should pass:\n{proc.stdout}{proc.stderr}")
+        else:
+            print("positive: --first-run override passed assemble and verify")
+
+        site_env = repo / "_site_env"
+        env = os.environ.copy()
+        env["ASSEMBLE_FIRST_RUN"] = "1"
+        proc = _run([sys.executable, str(assemble), str(site_env)], env=env)
+        if proc.returncode != 0 or "first-run override" not in proc.stdout:
+            errors.append(
+                f"ASSEMBLE_FIRST_RUN assemble should pass:\n{proc.stdout}{proc.stderr}"
+            )
+            return
+        proc = _run([sys.executable, str(verify), str(site_env)], env=env)
+        if proc.returncode != 0:
+            errors.append(
+                f"ASSEMBLE_FIRST_RUN verify should pass:\n{proc.stdout}{proc.stderr}"
+            )
+        else:
+            print("positive: ASSEMBLE_FIRST_RUN override passed assemble and verify")
+
+        proc = _run([sys.executable, str(verify), str(site_env)])
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or "no previous revision" not in output:
+            errors.append(f"verify must still fail when the override is unset:\n{output}")
+
+
 def main() -> None:
-    if len(sys.argv) == 2 and sys.argv[1] == "--self-test":
+    args = [arg for arg in sys.argv[1:] if arg != "--first-run"]
+    first_run = first_run_enabled("--first-run" in sys.argv[1:])
+    if args == ["--self-test"]:
         raise SystemExit(self_test())
-    if len(sys.argv) > 2:
-        raise SystemExit("usage: verify_site.py [--self-test | ASSEMBLED_ROOT]")
-    assembled = len(sys.argv) == 2
+    if len(args) > 1:
+        raise SystemExit(
+            "usage: verify_site.py [--self-test | [--first-run] [ASSEMBLED_ROOT]]"
+        )
+    assembled = len(args) == 1
     if assembled:
-        os.chdir(sys.argv[1])
-    check_tree(assembled)
+        os.chdir(args[0])
+    check_tree(assembled, first_run=first_run)
 
 
 if __name__ == "__main__":

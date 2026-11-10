@@ -18,12 +18,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          # Full history and tags so assemble can hash the previous release's CSS/JS.
+          # Full history and tags so assemble can carry CSS/JS from HEAD^1
+          # and the two newest v* tags. Do not set ASSEMBLE_FIRST_RUN here.
           fetch-depth: 0
           fetch-tags: true
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
         with:
           version: '3.54.0'
+      # task verify assembles the site. It must fail when no previous revision
+      # is visible. Do not set ASSEMBLE_FIRST_RUN or pass --first-run.
       - run: task verify
 
   release:
