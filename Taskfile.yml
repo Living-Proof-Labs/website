@@ -7,6 +7,7 @@ tasks:
     cmds:
       - python3 tools/verify_site.py
       - python3 tools/check_css.py
+      - python3 tools/verify_site.py --self-test
   verify:
     desc: Run all static-site verification
     cmds:

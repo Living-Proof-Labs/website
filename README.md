@@ -4,7 +4,7 @@ Marketing site for [Living Proof Labs](https://livingprooflabs.com): verificatio
 
 ## Stack
 
-- Static HTML and CSS (no build step)
+- Static HTML and CSS. Deploy fingerprints CSS and JavaScript filenames; there is no application build.
 - GitHub Pages with GitHub Actions (`.github/workflows/deploy.yml`)
 - Custom domain via `CNAME` and Cloudflare DNS
 
@@ -18,7 +18,7 @@ Open http://127.0.0.1:8765
 
 ## Deploy
 
-Push to `main`. The workflow publishes `index.html`, `404.html`, `privacy.html`, `terms.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll` to GitHub Pages. The legal pages are drafts pending counsel, not a completed review.
+Push to `main`. The workflow assembles `_site` from `index.html`, `404.html`, `privacy.html`, `terms.html`, `assets/`, `styles/`, `CNAME`, and `.nojekyll`, then publishes that directory to GitHub Pages. CSS and JavaScript filenames in the assembly are content-hashed (`styles/main.<sha256-8>.css`, `assets/nav.<sha256-8>.js`) and new HTML references only those current names. The assembly also keeps `styles/main.css` and `assets/nav.js` with the current bytes, and the previous release's CSS and JS under their content hashes, so HTML cached from before the deploy still resolves. Files in the repository stay unhashed, so `python3 -m http.server` still serves the source tree. The legal pages are drafts pending counsel, not a completed review.
 
 Creating the Pages site the first time needs repository administration, and a workflow cannot grant that to `GITHUB_TOKEN` (`administration` is not a valid workflow permission). Either:
 
