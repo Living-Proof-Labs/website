@@ -35,13 +35,12 @@ jobs:
           token: ${{ secrets.PAGES_ENABLE_TOKEN != '' && secrets.PAGES_ENABLE_TOKEN || github.token }}
 
       - name: Assemble site
-        run: |
-          mkdir -p _site
-          cp index.html 404.html privacy.html terms.html CNAME .nojekyll favicon.ico site.webmanifest _site/
-          cp -a assets styles _site/
+        run: python3 tools/assemble_site.py _site
 
       - name: Verify assembled site
-        run: python3 tools/verify_site.py _site
+        run: |
+          python3 tools/verify_site.py _site
+          python3 tools/check_css.py _site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 """Fail if any stylesheet has unbalanced braces (e.g. an unclosed @media block after a merge)."""
+import os
 import pathlib
 import sys
+
+# Optional root (e.g. _site) so CI can brace-check the assembled stylesheets.
+if len(sys.argv) > 1:
+    os.chdir(sys.argv[1])
 
 failures = 0
 for path in sorted(pathlib.Path('styles').rglob('*.css')):
