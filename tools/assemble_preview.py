@@ -6,6 +6,7 @@ import sys
 import tempfile
 import shutil
 from pathlib import Path
+from assemble_site import ROOT_FILES, COPY_TREES
 
 ROOT = Path(__file__).resolve().parents[1]
 HEADERS = '/*\n  X-Robots-Tag: noindex, nofollow, noarchive\n  Cache-Control: no-store\n'
@@ -16,11 +17,18 @@ def package(output: Path) -> None:
     output = output.resolve()
     if output.exists():
         raise SystemExit(f'refusing to replace existing output: {output}')
+    # Reject inputs before the production copier can dereference symlinks.
+    for name in ROOT_FILES + COPY_TREES:
+        source = ROOT / name
+        if source.is_symlink():
+            raise SystemExit(f'symlinks are not preview inputs: {name}')
+        if source.is_dir() and any(p.is_symlink() for p in source.rglob('*')):
+            raise SystemExit(f'symlinks are not preview inputs: {name}')
     with tempfile.TemporaryDirectory(prefix='lpl-preview-') as tmp:
         stage = Path(tmp) / 'site'
         for script, args in [('assemble_site.py', [str(stage)]),
                              ('verify_site.py', [str(stage)]),
-                             ('check_css.py', [])]:
+                             ('check_css.py', [str(stage)])]:
             subprocess.run([sys.executable, str(ROOT / 'tools' / script), *args],
                            cwd=ROOT, check=True)
         (stage / 'CNAME').unlink()
