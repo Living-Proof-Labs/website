@@ -50,3 +50,10 @@ footer instead, include it in the merge-commit body. Squashing is not required.
 ## Contact
 
 team@livingprooflabs.com
+
+## Cloudflare preview preparation
+
+The [preview and cutover plan](docs/cloudflare-preview.md) describes static-only
+packaging and the separate approval gates for credentials and hosting changes.
+`python3 tools/assemble_preview.py /tmp/lpl-preview-new` builds a non-indexable
+preview artifact; it does not deploy. Run `python3 tools/test_preview.py` to test.
