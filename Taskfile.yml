@@ -10,6 +10,7 @@ tasks:
       - python3 tools/verify_site.py --self-test
       - python3 tools/test_preview.py
       - python3 tools/test_guidelines_pins.py
+      - python3 tools/test_action_pins_review.py
   verify:
     desc: Run all static-site verification
     cmds:
