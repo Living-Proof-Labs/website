@@ -22,7 +22,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.4.0
         with:
           # Full history and tags so assemble can carry CSS/JS from HEAD^1
           # and the two newest v* tags. Do not set ASSEMBLE_FIRST_RUN here.
@@ -30,7 +30,7 @@ jobs:
           fetch-tags: true
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v5.0.0
         with:
           enablement: true
           # GitHub does not allow an Actions workflow to grant administration,
@@ -51,10 +51,10 @@ jobs:
           python3 tools/check_css.py _site
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v3.0.1
         with:
           path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4.0.5
