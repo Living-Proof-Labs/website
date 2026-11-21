@@ -1,9 +1,20 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      release_version:
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag (vX.Y.Z) to retry deployment for this exact commit
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -12,7 +23,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -20,14 +31,27 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      RELEASE_VERSION: ${{ inputs.release_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4.4.0
         with:
           # Full history and tags so assemble can carry CSS/JS from HEAD^1
           # and the two newest v* tags. Do not set ASSEMBLE_FIRST_RUN here.
+          ref: ${{ inputs.release_tag }}
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
+
+      - name: Require release tag to match the exact verified commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$GITHUB_SHA"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5.0.0

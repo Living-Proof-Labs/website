@@ -37,3 +37,15 @@ jobs:
       contents: write
     # v6.0.2 resolves to 2dab53acd2b146af819520dec1bb34cc6b87c94c.
     uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v9.7.9
+
+  deploy:
+    needs: [verify, release]
+    if: needs.release.outputs.published == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      release_tag: ${{ needs.release.outputs.git-tag }}
+      release_version: ${{ needs.release.outputs.version }}
