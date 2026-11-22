@@ -27,8 +27,17 @@ USES = re.compile(
     re.MULTILINE,
 )
 PRESET = re.compile(rf"^github>{REPO}:renovate-preset#(?P<ref>.+)$")
-SHARED_RELEASE_INPUTS = {"dry-run", "draft-release"}
-SHARED_RELEASE_OUTPUTS = {"draft-created", "published", "version", "git-tag", "release-url"}
+SHARED_RELEASE_INPUTS = {"dry-run", "draft-release", "expected-version", "expected-commit"}
+SHARED_RELEASE_OUTPUTS = {"draft-created", "published", "version", "git-tag", "release-url", "commit"}
+CANDIDATE_INPUTS = {"replay-tag"}
+CANDIDATE_OUTPUTS = {
+    "semver-version", "pep440-version", "debian-version", "version",
+    "git-tag", "commit", "run-id", "run-attempt",
+}
+INTERFACES = {
+    "semantic-release.yml": (SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS, "write"),
+    "semantic-release-candidate.yml": (CANDIDATE_INPUTS, CANDIDATE_OUTPUTS, "read"),
+}
 
 
 def _root() -> Path:
@@ -124,8 +133,7 @@ class GuidelinesPins(unittest.TestCase):
     def test_mismatched_pins_are_reported(self):
         text = workflow_path().read_text()
         mutated = USES.sub(lambda m: m.group(0).replace(m.group("ref"), "v2.2.0", 1), text, count=1)
-        preset = {"extends": [f"github>{REPO}:renovate-preset#v9.2.0"]}
-        self.assertEqual(len(pinned_versions(mutated, preset)), 2)
+        self.assertEqual(len(pinned_versions(mutated)), 2)
 
     @unittest.skipUnless(
         workflow_path() is not None, "this repository has no guidelines workflow call"
@@ -136,14 +144,12 @@ class GuidelinesPins(unittest.TestCase):
         calls = guideline_calls(text)
         self.assertTrue(calls, "expected a job that uses the shared semantic-release workflow")
         for name, match in calls.items():
-            self.assertEqual(match.group("file"), "semantic-release.yml")
+            inputs, outputs, permission = INTERFACES[match.group("file")]
             block = _job_block(text, name)
-            self.assertLessEqual(set(_mapping(block, "with")), SHARED_RELEASE_INPUTS)
-            self.assertEqual(_mapping(block, "permissions").get("contents"), "write")
+            self.assertLessEqual(set(_mapping(block, "with")), inputs)
+            self.assertEqual(_mapping(block, "permissions").get("contents"), permission)
             used = set(re.findall(rf"needs\.{re.escape(name)}\.outputs\.([\w-]+)", text))
-            self.assertLessEqual(
-                used, SHARED_RELEASE_OUTPUTS, sorted(used - SHARED_RELEASE_OUTPUTS)
-            )
+            self.assertLessEqual(used, outputs, sorted(used - outputs))
 
     @unittest.skipUnless(
         workflow_path() is not None, "this repository has no guidelines workflow call"
@@ -166,15 +172,14 @@ class GuidelinesPins(unittest.TestCase):
         workflow_path() is not None, "this repository has no guidelines workflow call"
     )
     def test_recorded_interface_matches_the_pinned_shared_workflow(self):
-        refs = {match.group("ref") for match in guideline_calls().values()}
-        (ref,) = refs
-        url = (
-            f"https://raw.githubusercontent.com/{REPO}/{ref}/.github/workflows/semantic-release.yml"
-        )
-        with urllib.request.urlopen(url, timeout=30) as response:
-            shared = response.read().decode()
-        self.assertEqual(_workflow_call_keys(shared, "inputs"), SHARED_RELEASE_INPUTS)
-        self.assertEqual(_workflow_call_keys(shared, "outputs"), SHARED_RELEASE_OUTPUTS)
+        for match in guideline_calls().values():
+            file, ref = match.group("file", "ref")
+            inputs, outputs, _ = INTERFACES[file]
+            url = f"https://raw.githubusercontent.com/{REPO}/{ref}/.github/workflows/{file}"
+            with urllib.request.urlopen(url, timeout=30) as response:
+                shared = response.read().decode()
+            self.assertEqual(_workflow_call_keys(shared, "inputs"), inputs)
+            self.assertEqual(_workflow_call_keys(shared, "outputs"), outputs)
 
 
 if __name__ == "__main__":

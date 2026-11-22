@@ -1,0 +1,96 @@
+name: Build and verify website artifact
+on:
+  workflow_call:
+    inputs:
+      version: {type: string, required: true}
+      commit: {type: string, required: true}
+      run: {type: string, required: true}
+      attempt: {type: string, required: true}
+    outputs:
+      artifact-id:
+        value: ${{ jobs.build.outputs.id }}
+      digest:
+        value: ${{ jobs.build.outputs.digest }}
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.seal.outputs.digest }}
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      VERSION: ${{ inputs.version }}
+      SOURCE: ${{ inputs.commit }}
+      PLAN_RUN: ${{ inputs.run }}
+      PLAN_ATTEMPT: ${{ inputs.attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build and seal one website artifact
+        id: seal
+        shell: bash
+        env:
+          EVENT_SOURCE: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$SOURCE" = "$EVENT_SOURCE"
+          test "$PLAN_RUN" = "$GITHUB_RUN_ID"
+          test "$PLAN_ATTEMPT" = "$GITHUB_RUN_ATTEMPT"
+          site="$RUNNER_TEMP/website"
+          python3 tools/assemble_site.py "$site"
+          python3 tools/site_release.py stamp "$site" "$VERSION" "$SOURCE" "$PLAN_RUN" "$PLAN_ATTEMPT"
+          python3 tools/verify_site.py "$site"
+          python3 tools/check_css.py "$site"
+          test -z "$(find "$site" ! -type f ! -type d -print -quit)"
+          tar --dereference --hard-dereference -C "$site" -cf "$RUNNER_TEMP/artifact.tar" .
+          digest=$(sha256sum "$RUNNER_TEMP/artifact.tar")
+          echo "digest=${digest%% *}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        id: upload
+        with:
+          name: website-build-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 14
+          if-no-files-found: error
+  readback:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Require the sealed upload ID
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ needs.build.outputs.id }}
+        run: '[[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        id: download
+        continue-on-error: true
+        with:
+          artifact-ids: ${{ needs.build.outputs.id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/website-first
+      - if: steps.download.outcome == 'failure'
+        run: sleep 4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.download.outcome == 'failure'
+        with:
+          artifact-ids: ${{ needs.build.outputs.id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/website-retry
+      - name: Check the version and bytes that the writer may attest
+        env:
+          VERSION: ${{ inputs.version }}
+          SOURCE: ${{ inputs.commit }}
+          PLAN_RUN: ${{ inputs.run }}
+          PLAN_ATTEMPT: ${{ inputs.attempt }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+          LOCATION: ${{ steps.download.outcome == 'success' && 'website-first' || 'website-retry' }}
+        run: python3 tools/site_release.py check "$RUNNER_TEMP/$LOCATION/artifact.tar" "$VERSION" "$SOURCE" "$PLAN_RUN" "$PLAN_ATTEMPT" "$DIGEST"
